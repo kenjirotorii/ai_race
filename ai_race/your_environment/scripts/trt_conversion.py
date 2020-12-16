@@ -22,7 +22,7 @@ from cv_bridge import CvBridge
 from mobilenet import mobilenet_v2
 
 #model = models.resnet18()
-mode = mobilenet_v2(num_classes=3)
+model = mobilenet_v2(num_classes=3)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def init_inference():
