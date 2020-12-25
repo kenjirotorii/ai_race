@@ -89,6 +89,19 @@ sudo python setup.py install                            # 再インストール
 sudo python3 setup.py install                           # 再インストール
 ```
 
+動作確認済みのバージョン（Wed Nov 4時点）に戻せているかは、以下コマンドで確認可能です。
+
+```
+$ cd ~/torch2trt      # torch2trtを、git cloneしたリポジトリへ移動
+$ git log -1          # 動作確認済みのバージョン（Wed Nov 4時点）に戻せているか確認、以下ログが出ればOK
+commit d1fa6f9f20c6c4c57a9486680ab38c45d0d94ec3 (HEAD -> master, origin/master, origin/HEAD)
+Author: John <jwelsh@nvidia.com>
+Date:   Wed Nov 4 13:45:36 2020 -0500
+    Sandeepkumar skb groupnorm plugin (#437)
+    * added plugin for GroupNorm
+    Co-authored-by: sandeepkumar-skb <sandeep.skb@uber.com>
+```
+
 ## catkin_wsを再buildするにはどうすればよい？
 
 以下の通り実行して下さい。
@@ -112,6 +125,26 @@ cd ~/catkin_ws
 catkin clean -y
 catkin build
 source devel/setup.bash
+```
+
+## level1t(with透明壁),level1a(advance)の初回起動前にcatkin_wsを再buildするにはどうすればよい？
+
+以下を実施して下さい。level1t,1a用に追加した機能を有効化するために必要です。<br>
+（コースアウト検知機能のためにcatkin再build、自動復帰機能のためにros-melodic-cob-srvs、が必要）<br>
+<br>
+`~/catkin_ws`以下を、再度catkin buildする場合
+
+```
+cd ~/catkin_ws
+catkin clean -y
+catkin build
+source devel/setup.bash
+```
+
+加えて、以下パッケージのインストールも必要です。
+
+```
+sudo apt install -y ros-melodic-cob-srvs
 ```
 
 ## 1～2時間着手するならどのあたりが良いか。
@@ -168,10 +201,10 @@ Proxy利用自体が各ネットワーク事情に依存すると思いますの
 本リポジトリのバージョンアップを取り込む場合は、forkしたリポジトリにて以下を実行して下さい。
 
 ```
-git checkout master                                        # ローカルのmasterブランチに移動
+git checkout main                                          # ローカルのmainブランチに移動
 git remote add upstream https://github.com/seigot/ai_race  # fork元のリポジトリをupstream という名前でリモートリポジトリに登録（名前はなんでもいい。登録済みならスキップ）
 git fetch upstream                                         # upstream から最新のコードをfetch
-git merge upstream/master                                  # upstream/master を ローカルのmaster にmerge
+git merge upstream/main                                    # upstream/main を ローカルのmaster にmerge
 git push                                                   # 変更を反映
 ```
 
