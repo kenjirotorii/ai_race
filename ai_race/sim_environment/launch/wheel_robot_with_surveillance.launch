@@ -6,6 +6,8 @@
   <arg name="gui" default="false"/>
   <arg name="track_name" default="medium_track.world"/>
   <arg name="controller" default="false" />
+  <arg name="dynamic_recon" default="false" />
+  <arg name="with_auto_recovery" default="false" />
 
   <!-- We resume the logic in empty_world.launch, changing only the name of 
     the world to be launched -->
@@ -56,6 +58,14 @@
   <node name="image_view_sur_camera" pkg="image_view" type="image_view" args="image:=/surveillance_camera/image_raw" />
   <node name="image_view_godeye_camera" pkg="image_view" type="image_view" args="image:=/godeye_camera/image_raw" />
 
+  <!-- use dynamic reconfigure course_out_surveillance-->
+  <group if="$(eval dynamic_recon==true)">
+    <!-- dynamic reconfigure SERVER for max speed coeff node -->
+      <node pkg="sim_environment" type="dynamic_recon_server.py" name="dynamic_recon_server_node" output="screen" />
+    <!-- dynamic reconfigure CLIENT for max speed coeff node -->
+      <node pkg="sim_environment" type="course_out_surveillance.py" name="course_out_surveillance" output="screen" />
+  </group>
+
   <!-- servo node -->
     <node pkg="sim_environment" type="servo_commands.py" name="servo_commands" output="screen" />
 
@@ -66,11 +76,18 @@
     <node pkg="sim_environment" type="timing_surveillance.py" name="timing_surveillance" output="screen" />
   <!-- courseout recovery node-->
     <node pkg="sim_environment" type="jugemu.py" name="jugemu" output="screen" />  
+  <group if="$(eval with_auto_recovery==true)">
+    <rosparam file="$(find sim_environment)/config/respown_point.yaml" command="load" />
+    <node pkg="sim_environment" type="detect_stack.py" name="detect_stack" output="screen" /> 
+    <node pkg="sim_environment" type="jugemu_new.py" name="jugemu_new" output="screen" />
+  </group>
 
   <!-- without gui(with keyboard con) -->
+  <group if="$(eval gui==false)">
+      <node pkg="sim_environment" type="window_management2.py" name="window_management" output="screen" />
+  </group>
   <group if="$(eval controller==true)">
       <node pkg="utility" type="keyboard_con_pygame2.py" name="keyboard_con_pygame2" output="screen" />
-      <node pkg="sim_environment" type="window_management2.py" name="window_management" output="screen" />
   </group>
 
 </launch>

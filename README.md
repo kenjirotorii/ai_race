@@ -112,6 +112,7 @@ source /opt/ros/melodic/setup.bash
 ```
 # joint state controller, and ros package
 sudo apt install -y ros-melodic-ros-control ros-melodic-ros-controllers  ros-melodic-joint-state-controller ros-melodic-effort-controllers ros-melodic-position-controllers ros-melodic-joint-trajectory-controller
+sudo apt install ros-melodic-cob-srvs
 # gazebo
 sudo apt-get install -y gazebo9
 sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
@@ -479,10 +480,10 @@ train.pyや周辺ファイルを参考に、各種パラメータを調整する
 本リポジトリのバージョンアップを取り込む場合は、forkしたリポジトリにて以下を実行して下さい。<br>
 
 ```
-git checkout master                                        # ローカルのmasterブランチに移動
+git checkout main                                          # ローカルのmainブランチに移動
 git remote add upstream https://github.com/seigot/ai_race  # fork元のリポジトリをupstream という名前でリモートリポジトリに登録（名前はなんでもいい。登録済みならスキップ）
 git fetch upstream                                         # upstream から最新のコードをfetch
-git merge upstream/master                                  # upstream/master を ローカルのmaster にmerge
+git merge upstream/main                                    # upstream/main を ローカルのmaster にmerge
 git push                                                   # 変更を反映
 ```
 
@@ -496,6 +497,18 @@ git push                                                   # 変更を反映
 [GitHub-プルリクエストの作成方法](https://docs.github.com/ja/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request)<br>
 [[実践] はじめてのPull Requestをやってみよう](https://qiita.com/wataryooou/items/8dce6b6d5f54ab2cef04)<br>
 [【GitHub】Pull Requestの手順](https://qiita.com/aipacommander/items/d61d21988a36a4d0e58b)<br>
+
+
+### 3.5 SimpleNetを使う
+
+デフォルトでは、ニューラルネットワークとしてResNet-18を使うようになっていますが、自分でニューラルネットワークを作成する場合のサンプルとして、[シンプルなニューラルネットワーク(SimpleNet)](https://github.com/seigot/ai_race/blob/main/ai_race/learning/scripts/samplenet.py#L35)を用意しています。<br>
+ResNet-18ではなくSimpleNetを使う場合は、`train.py`, `trt_conversion.py`, `inference_from_image.py`の実行時に、`--model simplenet`オプションを付けてください。
+```
+cd ~/catkin_ws/src/ai_race/ai_race/learning/scripts
+python3 train.py --model simplenet　 --data_csv $HOME/ai_race_data_sample/dataset/plane/_2020-11-17-01-34-45/_2020-11-17-01-34-45.csv --model_name sample_model
+python3 trt_conversion.py --model simplenet --pretrained_model <学習させたモデル フルパス指定> --trt_model <保存するtrtモデル名>
+python inference_from_image.py --model simplenet --trt_module --trt_model <保存したtrtモデル名 フルパス指定> 
+```
 
 ## 4. ルール
 
@@ -517,15 +530,25 @@ git push                                                   # 変更を反映
 
 以下のコースを用意しました。<br>
 
-|  -  |  level1  |  level2  |  level3  |
+|  -  |  level1  |  level1 with透明壁  |  level1 advance  |
 | ---- | ---- | ---- | ---- |
-|  名称  |  Plane  |  Medium Track  |  Hard track  |
-|  外観  |  ![medium_track_plane-2.png](https://github.com/seigot/ai_race/blob/main/document/medium_track_plane-2.png)  |  ![medium_track-2.png](https://github.com/seigot/ai_race/blob/main/document/medium_track-2.png)  |  ![hard_track.png](https://github.com/seigot/ai_race/blob/main/document/hard_track.png)  |
-|  特徴  |  地面：一様な模様です  |  地面：濃淡付きの模様です  |  地面：サーキット型の模様です。カーブが急で、速度を調整しないと曲がれない  |
-|  障害物  |  なし  |  なし  |  三角コーンを置くかも  |
-|  起動コマンド  |  bash prepare.sh -l 1  |  bash prepare.sh -l 2  |  bash prepare.sh -l 3  |
-|  学習データのサンプル  |  あり（１週分）[url](https://github.com/seigot/ai_race_data_sample/tree/main/dataset/plane)  |  あり（１週分）[url](https://github.com/seigot/ai_race_data_sample/tree/main/dataset/medium) |  なし  |
-|  備考  |  今回のルールで採用  |  optional  |  optional（準備中）  |
+|  名称  |  Plane  |  Plane(with透明壁)  |  Plane(advance)  |
+|  外観  |  ![medium_track_plane-2.png](https://github.com/seigot/ai_race/blob/main/document/medium_track_plane-2.png)  |  ![medium_track_plane_tomei-kabe.png](https://github.com/seigot/ai_race/blob/main/document/medium_track_plane_tomei-kabe.png)  |  ![medium_track_plane3_advance.png](https://github.com/seigot/ai_race/blob/main/document/medium_track_plane3_advance.png)  |
+|  特徴  |  地面：一様な模様です  |  地面：一様な模様です  |  地面：一様な模様+周辺に草が生えています。<br>草エリア走行時は速度が落ちます。  |
+|  障害物  |  なし  |  赤い点線部分に透明の壁があります  |  赤い点線部分に透明の壁があります  |
+|  起動コマンド  |  bash prepare.sh -l 1  |  bash prepare.sh -l 1t  |  bash prepare.sh -l 1a  |
+|  学習データのサンプル  |  あり（１週分）[url](https://github.com/seigot/ai_race_data_sample/tree/main/dataset/plane)  |  なし  |  なし  |
+|  備考  |  今回のルールで採用  |  初回起動前に、[FAQ](FAQ.md)を参考に再度catkin buildして下さい  |  初回起動前に、[FAQ](FAQ.md)を参考に再度catkin buildして下さい  |
+
+|  -  |  level2  |  level3  |
+| ---- | ---- | ---- |
+|  名称  |  Medium Track  |  Hard track  |
+|  外観  |  ![medium_track-2.png](https://github.com/seigot/ai_race/blob/main/document/medium_track-2.png)  |  ![hard_track.png](https://github.com/seigot/ai_race/blob/main/document/hard_track.png)  |
+|  特徴  |  地面：濃淡付きの模様です  |  地面：サーキット型の模様です。カーブが急で、速度を調整しないと曲がれない  |
+|  障害物  |  なし  |  三角コーンを置くかも  |
+|  起動コマンド  |  bash prepare.sh -l 2  |  bash prepare.sh -l 3  |
+|  学習データのサンプル  |  あり（１週分）[url](https://github.com/seigot/ai_race_data_sample/tree/main/dataset/medium) |  なし  |
+|  備考  |  optional  |  optional（準備中）  |
 
 ### 4.4 提出して頂くもの
 
