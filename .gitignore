@@ -1,0 +1,5 @@
+train_data.pkl
+test_data.pkl
+
+__pycache__
+*.pyc
