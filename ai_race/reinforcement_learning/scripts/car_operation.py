@@ -178,7 +178,7 @@ class CarBot:
         self.twist_pub.publish(twist)
 
         # initialize judge and car pose
-        subprocess.call('bash ~/catkin/src/ai_race/ai_race/ai_race/reinforcement_learning/scripts/utils/reset.sh', shell=True)
+        subprocess.call('bash ~/catkin_ws/src/ai_race/ai_race/ai_race/reinforcement_learning/scripts/utils/reset.sh', shell=True)
 
         time.sleep(1)
         self.image_sub = rospy.Subscriber('front_camera/image_raw', Image, self.set_throttle_steering)
