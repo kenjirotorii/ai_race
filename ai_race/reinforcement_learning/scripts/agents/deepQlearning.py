@@ -82,6 +82,7 @@ class Brain:
 
         # 1. メモリサイズの確認
         if len(self.memory) < self.batch_size:
+            print("Skip training because memory size is less than batch size")
             return
 
         # 2. ミニバッチの作成
@@ -124,7 +125,7 @@ class Brain:
         # 3.3 max{Q(s_t+1, a)}値を求める。ただし次の状態があるかに注意
 
         # next_stateがあるかをチェックするインデックスマスクを作成
-        non_final_mask = torch.ByteTensor(tuple(map(lambda s: s is not None, self.batch.next_state))).to(DEVICE)
+        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, self.batch.next_state)), dtype=torch.bool).to(DEVICE)
 
         # まずは全部0にしておく
         next_state_values = torch.zeros(self.batch_size).to(DEVICE)
