@@ -11,7 +11,8 @@ import subprocess
 import rospy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
-from std_msgs.msg import Bool, Float32, Float64, Odometry
+from std_msgs.msg import Bool, Float32, Float64
+from nav_msgs.msg import Odometry
 import tf
 
 import numpy as np
