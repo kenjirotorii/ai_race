@@ -22,11 +22,11 @@ def distance_from_centerline(pose):
 
     if x >= ref_x and y >= ref_y:
         return math.fabs(np.sqrt((x - ref_x)**2 + (y - ref_y)**2) - ref_r)
-    elif x =< -ref_x and y >= ref_y:
+    elif x <= -ref_x and y >= ref_y:
         return math.fabs(np.sqrt((x + ref_x)**2 + (y - ref_y)**2) - ref_r)
-    elif x =< -ref_x and y =< -ref_y:
+    elif x <= -ref_x and y <= -ref_y:
         return math.fabs(np.sqrt((x + ref_x)**2 + (y + ref_y)**2) - ref_r)
-    elif x >= ref_x and y =< -ref_y:
+    elif x >= ref_x and y <= -ref_y:
         return math.fabs(np.sqrt((x - ref_x)**2 + (y + ref_y)**2) - ref_r)
     elif x >= -ref_x and x <= ref_x and y >= 0 and y >= x - 112*scaler and y >= - x - 112*scaler:
         return math.fabs(y - 328*scaler)
