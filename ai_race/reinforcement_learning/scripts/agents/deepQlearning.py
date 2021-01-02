@@ -20,8 +20,7 @@ from torch import nn
 from torch import optim
 import torch.nn.functional as F
 
-from networks.mobilenet import MobileNetV2
-
+from networks.simplenet import DQN
 
 Transition = namedtuple(
     'Transition', ('state', 'action', 'next_state', 'reward')
@@ -58,21 +57,20 @@ class Memory:
 
 class Brain:
 
-    def __init__(self, num_actions, mem_capacity, batch_size, lr, gamma):
+    def __init__(self, num_actions, mem_capacity, batch_size, lr, gamma, debug):
 
         # parameters
         self.num_actions = num_actions
         self.batch_size = batch_size
         self.gamma = gamma
+        self.debug = debug
 
         # memory 
         self.memory = Memory(capacity=mem_capacity)
 
         # network
-        self.main_q_network = MobileNetV2(num_classes=num_actions).to(DEVICE)
-        self.target_q_network = MobileNetV2(num_classes=num_actions).to(DEVICE)
-
-        #print(self.main_q_network)
+        self.main_q_network = DQN(120, 320, num_actions).to(DEVICE)
+        self.target_q_network = DQN(120, 320, num_actions).to(DEVICE)
 
         # optimizer
         self.optimizer = optim.Adam(self.main_q_network.parameters(), lr=lr)
@@ -155,16 +153,23 @@ class Brain:
         '''Target Q-NetworkをMainと同じにする'''
         self.target_q_network.load_state_dict(self.main_q_network.state_dict())
 
-    def decide_action(self, state, episode):
+    def decide_action(self, state, episode, epsilon):
         '''現在の状態に応じて、行動を決定する'''
         # ε-greedy法で徐々に最適行動のみを採用する
-        epsilon = 0.5 * (1 / (episode + 1))
+        if self.debug:
+            if epsilon == 'auto':
+                eps = 0.5 * (1 / (episode + 1))
+            else:
+                eps = epsilon
 
-        if epsilon <= np.random.uniform(0, 1):
+        if eps <= np.random.uniform(0, 1):
             self.main_q_network.eval()  # ネットワークを推論モードに切り替える
             with torch.no_grad():
+                output = self.main_q_network(state)
+                if self.debug:
+                    print("output={}".format(output.to('cpu')))
                 # ネットワークの出力の最大値のindexを取り出す
-                return self.main_q_network(state).max(1)[1].view(1, 1)
+                return output.max(1)[1].view(1, 1)
 
         else:
             # 0,1の行動をランダムに返す
@@ -173,17 +178,17 @@ class Brain:
 
 class Agent:
 
-    def __init__(self, num_actions=3, mem_capacity=1000, batch_size=32, lr=0.0001, gamma=0.99):
+    def __init__(self, num_actions=3, mem_capacity=1000, batch_size=32, lr=0.0001, gamma=0.99, debug=True):
         '''課題の状態と行動の数を設定する'''
-        self.brain = Brain(num_actions, mem_capacity, batch_size, lr, gamma)  # エージェントが行動を決定するための頭脳を生成
+        self.brain = Brain(num_actions, mem_capacity, batch_size, lr, gamma, debug)  # エージェントが行動を決定するための頭脳を生成
 
     def update_q_function(self):
         '''Q関数を更新する'''
         self.brain.replay()
 
-    def get_action(self, state, episode):
+    def get_action(self, state, episode, epsilon='auto'):
         '''行動を決定する'''
-        action = self.brain.decide_action(state, episode)
+        action = self.brain.decide_action(state, episode, epsilon)
         return action
 
     def memorize(self, state, action, state_next, reward):

@@ -58,7 +58,7 @@ class CarBot:
         self.course_out = False
 
         # agent
-        self.agent = Agent(num_actions=NUM_ACTIONS, mem_capacity=1000, batch_size=32, lr=0.0001, gamma=0.99)
+        self.agent = Agent(num_actions=NUM_ACTIONS, mem_capacity=1000, batch_size=32, lr=0.0005, gamma=0.95, debug=True)
 
     def callback_odom(self, msg):
         self.odom_x = msg.pose.pose.position.x
@@ -76,7 +76,9 @@ class CarBot:
         image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         image = IMG.fromarray(image)
         image = torchvision.transforms.ToTensor()(image)    # (3, 240, 320)
-        image = torch.unsqueeze(image, 0)                   # (1, 3, 240, 320)
+        # use only lower parts of images
+        image = image[:, 120:, :]                           # (3, 120, 320)
+        image = torch.unsqueeze(image, 0)                   # (1, 3, 120, 320)
 
         self.images.append(image)
 
@@ -111,21 +113,21 @@ class CarBot:
         dist_from_center = distance_from_centerline(pose)
 
         if dist_from_center < 0.1:
-            return 0.5
+            return 1.0
         elif dist_from_center < 0.2:
-            return 0.4
+            return 1.0
         elif dist_from_center < 0.3:
-            return 0.3
+            return 1.0
         elif dist_from_center < 0.4:
-            return 0.2
+            return 1.0
         elif dist_from_center < 0.45:
-            return 0.1
-        elif dist_from_center < 0.6:
             return 0.0
+        elif dist_from_center < 0.6:
+            return -1.0
         else:
             self.course_out = True
             rospy.loginfo('Course Out !!')
-            return -10.0
+            return -1.0
 
     def stop(self):
         rospy.loginfo('***** EPISODE #%d *****' % (self.episode))
