@@ -82,7 +82,6 @@ class Brain:
 
         # 1. メモリサイズの確認
         if len(self.memory) < self.batch_size:
-            print("Skip training because memory size is less than batch size")
             return
 
         # 2. ミニバッチの作成

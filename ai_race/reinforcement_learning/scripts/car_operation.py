@@ -145,7 +145,7 @@ class CarBot:
                 next_img = None
 
             act = self.actions[i].to(DEVICE)
-            rwd = torch.LongTensor([[self.rewards[i]]]).to(DEVICE)
+            rwd = torch.LongTensor([self.rewards[i]]).to(DEVICE)
 
             self.agent.memorize(img, act, next_img, rwd)
 
