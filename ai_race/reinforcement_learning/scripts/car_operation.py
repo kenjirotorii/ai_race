@@ -124,12 +124,12 @@ class CarBot:
             return 0.0
         else:
             self.course_out = True
-            rospy.loginfo('***** Course Out *****')
+            rospy.loginfo('Course Out !!')
             return -10.0
 
     def stop(self):
         rospy.loginfo('***** EPISODE #%d *****' % (self.episode))
-        rospy.loginfo('step=%d' % (self.step))
+        rospy.loginfo('total step:%d' % (self.step))
         rospy.loginfo('***********************')
         # stop car
         self.twist_pub.publish(Twist())
@@ -203,7 +203,5 @@ class CarBot:
 if __name__ == "__main__":
     
     car_bot = CarBot()
-
-    time.sleep(3)
 
     car_bot.run()
