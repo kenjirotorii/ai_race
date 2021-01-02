@@ -124,10 +124,10 @@ class Brain:
         # 3.3 max{Q(s_t+1, a)}値を求める。ただし次の状態があるかに注意
 
         # next_stateがあるかをチェックするインデックスマスクを作成
-        non_final_mask = torch.ByteTensor(tuple(map(lambda s: s is not None, self.batch.next_state)), device=DEVICE)
+        non_final_mask = torch.ByteTensor(tuple(map(lambda s: s is not None, self.batch.next_state))).to(DEVICE)
 
         # まずは全部0にしておく
-        next_state_values = torch.zeros(self.batch_size, device=DEVICE)
+        next_state_values = torch.zeros(self.batch_size).to(DEVICE)
 
         # 次の状態があるindexの、最大となるQ値をtarget Q-Networkから求める
         next_state_values[non_final_mask] = self.target_q_network(self.non_final_next_states).max(1)[0].detach()
@@ -168,7 +168,7 @@ class Brain:
 
         else:
             # 0,1の行動をランダムに返す
-            return  torch.LongTensor([[random.randrange(self.num_actions)]], device=DEVICE)
+            return  torch.LongTensor([[random.randrange(self.num_actions)]]).to(DEVICE)
 
 
 class Agent:

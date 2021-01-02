@@ -91,7 +91,7 @@ class CarBot:
 
         # get action from agent
         image = image.to(DEVICE)
-        action = self.agent.get_action(state, self.episode).to('cpu')
+        action = self.agent.get_action(image, self.episode).to('cpu')
         self.actions.append(action)
 
         angular_z = float(float(action[0])-((NUM_ACTIONS-1)/2))/((NUM_ACTIONS-1)/2)
@@ -110,7 +110,7 @@ class CarBot:
         twist.angular.x = 0.0
         twist.angular.y = 0.0
         twist.angular.z = angular_z
-        twist_pub.publish(twist)
+        self.twist_pub.publish(twist)
 
         self.step += 1
 
@@ -134,6 +134,8 @@ class CarBot:
             return -10.0
 
     def stop(self):
+        # stop car
+        self.twist_pub.publish(Twist())
         # unregister image subscription
         self.image_sub.unregister()
 
@@ -146,7 +148,7 @@ class CarBot:
                 next_img = None
 
             act = self.actions[i].to(DEVICE)
-            rwd = torch.LongTensor([[self.rewards[i]]], device=DEVICE)
+            rwd = torch.LongTensor([[self.rewards[i]]]).to(DEVICE)
 
             self.agent.memorize(img, act, next_img, rwd)
 
@@ -179,7 +181,7 @@ class CarBot:
         self.twist_pub.publish(twist)
 
         # initialize judge and car pose
-        subprocess.call('bash ~/catkin_ws/src/ai_race/ai_race/ai_race/reinforcement_learning/scripts/utils/reset.sh', shell=True)
+        subprocess.call('bash ~/catkin_ws/src/ai_race/ai_race/reinforcement_learning/scripts/utils/reset.sh', shell=True)
 
         time.sleep(1)
         self.image_sub = rospy.Subscriber('front_camera/image_raw', Image, self.set_throttle_steering)
