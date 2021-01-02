@@ -5,4 +5,4 @@ __pycache__
 *.pyc
 __init__.pyc
 
-judge/log/game_result.log
+/game_result.log

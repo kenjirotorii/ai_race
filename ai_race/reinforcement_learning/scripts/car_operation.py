@@ -31,7 +31,14 @@ NUM_ACTIONS = 5
 
 class CarBot:
 
-    def __init__(self):
+    def __init__(self, save_model_path=None, pretrained=False, load_model_path=None, debug=True):
+        
+        if save_model_path:
+            self.save_model_path = save_model_path
+        else:
+            self.save_model_path = '../model/test.pth'
+
+        self.debug = debug
 
         # node name
         rospy.init_node('car_bot', anonymous=True)
@@ -58,7 +65,10 @@ class CarBot:
         self.course_out = False
 
         # agent
-        self.agent = Agent(num_actions=NUM_ACTIONS, mem_capacity=1000, batch_size=32, lr=0.0005, gamma=0.95, debug=True)
+        self.agent = Agent(num_actions=NUM_ACTIONS, mem_capacity=1000, batch_size=32, lr=0.0005, gamma=0.95, debug=self.debug)
+
+        if pretrained or not self.debug:
+            self.agent.load_model(model_path=load_model_path)
 
     def callback_odom(self, msg):
         self.odom_x = msg.pose.pose.position.x
@@ -153,8 +163,13 @@ class CarBot:
 
     def agent_training(self, n_epoch):
         # Experience ReplayでQ関数を更新する
+        print("agent training n_epoch:{}".format(n_epoch))
         for epoch in range(n_epoch):
             self.agent.update_q_function()
+
+    def agent_model_save(self):
+        print("agent model save to {}".format(self.save_model_path))
+        self.agent.save_model(model_path=self.save_model_path)
 
     def update_target_q(self):
         self.agent.update_target_q_function()
@@ -186,11 +201,11 @@ class CarBot:
 
         while not rospy.is_shutdown():
 
-            if self.course_out:
+            if self.debug and self.course_out:
                 
                 self.stop()
                 self.agent_training(n_epoch=20)
-                self.agent.save_model('../model_weight/dqn_20210102.pth')
+                self.agent_model_save()
 
                 self.episode += 1
                 # update target q-function every 2 episodes
@@ -201,9 +216,16 @@ class CarBot:
 
             r.sleep()
 
+        if self.debug:
+            self.agent_model_save()
+
 
 if __name__ == "__main__":
     
-    car_bot = CarBot()
+    DEBUG = False
+    SAVE_MODEL_PATH = '../model_weight/dqn_20210103.pth'
+    LOAD_MODEL_PATH = '../model_weight/dqn_20210102.pth'
+
+    car_bot = CarBot(save_model_path=None, pretrained=True, load_model_path=LOAD_MODEL_PATH, debug=DEBUG)
 
     car_bot.run()
