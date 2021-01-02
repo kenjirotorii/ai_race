@@ -153,6 +153,13 @@ class Brain:
         '''Target Q-NetworkをMainと同じにする'''
         self.target_q_network.load_state_dict(self.main_q_network.state_dict())
 
+    def save_model(self, model_path):
+        torch.save(self.main_q_network.state_dict(), model_path)
+
+    def load_model(self, model_path):
+        self.main_q_network.load_state_dict(torch.load(model_path))
+        self.update_target_q_network()
+
     def decide_action(self, state, episode, epsilon):
         '''現在の状態に応じて、行動を決定する'''
         # ε-greedy法で徐々に最適行動のみを採用する
@@ -198,3 +205,9 @@ class Agent:
     def update_target_q_function(self):
         '''Target Q-NetworkをMain Q-Networkと同じに更新'''
         self.brain.update_target_q_network()
+
+    def save_model(self, model_path):
+        self.brain.save_model(model_path)
+
+    def load_model(self, model_path):
+        self.brain.load_model(model_path)

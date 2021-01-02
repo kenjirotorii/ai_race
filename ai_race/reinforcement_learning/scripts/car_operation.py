@@ -191,6 +191,7 @@ class CarBot:
                 
                 self.stop()
                 self.agent_training(n_epoch=20)
+                self.agent.save_model('../model_weight/dqn_20210102.pth')
 
                 self.episode += 1
                 # update target q-function every 2 episodes
