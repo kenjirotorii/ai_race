@@ -16,8 +16,8 @@ def distance_from_centerline(pose):
     y = pose[1]
 
     scaler = 6.0 / 1120
-    ref_x = 232*scaler
-    ref_y = 120*scaler
+    ref_x = 120*scaler
+    ref_y = 232*scaler
     ref_r = 208*scaler
 
     if x >= ref_x and y >= ref_y:
@@ -28,13 +28,13 @@ def distance_from_centerline(pose):
         return math.fabs(np.sqrt((x + ref_x)**2 + (y + ref_y)**2) - ref_r)
     elif x >= ref_x and y <= -ref_y:
         return math.fabs(np.sqrt((x - ref_x)**2 + (y + ref_y)**2) - ref_r)
-    elif x >= -ref_x and x <= ref_x and y >= 0 and y >= x - 112*scaler and y >= - x - 112*scaler:
-        return math.fabs(y - 328*scaler)
-    elif x >= -ref_x and x <= ref_x and y <= 0 and y <= x + 112*scaler and y <= - x + 112*scaler:
-        return math.fabs(y + 328*scaler)
-    elif y >= -ref_y and y <= ref_y and y <= x - 112*scaler and y >= - x + 112*scaler:
-        return math.fabs(x - 440*scaler)
-    elif y >= -ref_y and y <= ref_y and y <= - x - 112*scaler and y >= x + 112*scaler:
-        return math.fabs(x + 440*scaler)
+    elif x >= -ref_x and x <= ref_x and y >= 0 and y >= x + 112*scaler and y >= - x + 112*scaler:
+        return math.fabs(y - 440*scaler)
+    elif x >= -ref_x and x <= ref_x and y <= 0 and y <= x - 112*scaler and y <= - x - 112*scaler:
+        return math.fabs(y + 440*scaler)
+    elif y >= -ref_y and y <= ref_y and x >= 0 and y <= x + 112*scaler and y >= - x - 112*scaler:
+        return math.fabs(x - 328*scaler)
+    elif y >= -ref_y and y <= ref_y and x <= 0 and y <= - x + 112*scaler and y >= x - 112*scaler:
+        return math.fabs(x + 328*scaler)
     else:
         return None
