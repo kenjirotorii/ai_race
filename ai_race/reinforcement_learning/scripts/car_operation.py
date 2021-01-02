@@ -201,7 +201,7 @@ class CarBot:
 
         while not rospy.is_shutdown():
 
-            if self.debug and self.course_out:
+            if (self.debug and self.course_out) or self.step > 2500:
                 
                 self.stop()
                 self.agent_training(n_epoch=20)
@@ -215,17 +215,13 @@ class CarBot:
                 self.restart()
 
             r.sleep()
-
-        if self.debug:
-            self.agent_model_save()
-
+        
 
 if __name__ == "__main__":
     
-    DEBUG = False
+    DEBUG = True
     SAVE_MODEL_PATH = '../model_weight/dqn_20210103.pth'
-    LOAD_MODEL_PATH = '../model_weight/dqn_20210102.pth'
 
-    car_bot = CarBot(save_model_path=None, pretrained=True, load_model_path=LOAD_MODEL_PATH, debug=DEBUG)
+    car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, debug=DEBUG)
 
     car_bot.run()
