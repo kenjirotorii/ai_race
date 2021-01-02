@@ -168,6 +168,8 @@ class Brain:
                 eps = 0.5 * (1 / (episode + 1))
             else:
                 eps = epsilon
+        else:
+            eps = 0.0
 
         if eps <= np.random.uniform(0, 1):
             self.main_q_network.eval()  # ネットワークを推論モードに切り替える
