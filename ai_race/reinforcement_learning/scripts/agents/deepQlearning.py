@@ -72,7 +72,7 @@ class Brain:
         self.main_q_network = MobileNetV2(num_classes=num_actions).to(DEVICE)
         self.target_q_network = MobileNetV2(num_classes=num_actions).to(DEVICE)
 
-        print(self.main_q_network)
+        #print(self.main_q_network)
 
         # optimizer
         self.optimizer = optim.Adam(self.main_q_network.parameters(), lr=lr)

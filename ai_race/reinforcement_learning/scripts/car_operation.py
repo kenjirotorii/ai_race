@@ -43,27 +43,18 @@ class CarBot:
         self.pose_sub = rospy.Subscriber('/tracker', Odometry, self.callback_odom)
 
         # Initial twist
-        twist = Twist()
-        twist.linear.x = 0.0
-        twist.linear.y = 0.0
-        twist.linear.z = 0.0
-        twist.angular.x = 0.0
-        twist.angular.y = 0.0
-        twist.angular.z = 0.0
-        self.twist_pub.publish(twist)
+        self.twist_pub.publish(Twist())
 
         # odom
         self.odom_x = 1.6
         self.odom_y = 0.0
         self.odom_theta = 1.57
 
-        self.dist_from_center = 0.0
         self.bridge = CvBridge()
         self.images = []
         self.actions = []
         self.rewards = []
 
-        self.episode = 0
         self.course_out = False
 
         # agent
@@ -114,26 +105,32 @@ class CarBot:
 
         self.step += 1
 
-    def get_reward(self, pose):
-        self.dist_from_center = distance_from_centerline(pose)
+        rospy.loginfo('epi=%d, step=%d, action=%d, reward=%4.2f' % (self.episode, self.step, action, reward))
 
-        if self.dist_from_center < 0.1:
+    def get_reward(self, pose):
+        dist_from_center = distance_from_centerline(pose)
+
+        if dist_from_center < 0.1:
             return 0.5
-        elif self.dist_from_center < 0.2:
+        elif dist_from_center < 0.2:
             return 0.4
-        elif self.dist_from_center < 0.3:
+        elif dist_from_center < 0.3:
             return 0.3
-        elif self.dist_from_center < 0.4:
+        elif dist_from_center < 0.4:
             return 0.2
-        elif self.dist_from_center < 0.45:
+        elif dist_from_center < 0.45:
             return 0.1
-        elif self.dist_from_center < 0.6:
+        elif dist_from_center < 0.6:
             return 0.0
         else:
             self.course_out = True
+            rospy.loginfo('***** Course Out *****')
             return -10.0
 
     def stop(self):
+        rospy.loginfo('***** EPISODE #%d *****' % (self.episode))
+        rospy.loginfo('step=%d' % (self.step))
+        rospy.loginfo('***********************')
         # stop car
         self.twist_pub.publish(Twist())
         # unregister image subscription
@@ -163,7 +160,6 @@ class CarBot:
     def restart(self):
 
         self.step = 0
-        self.dist_from_center = 0.0
         self.course_out = False
         
         self.images = []
@@ -171,14 +167,7 @@ class CarBot:
         self.rewards = []
 
         # Initial twist
-        twist = Twist()
-        twist.linear.x = 0.0
-        twist.linear.y = 0.0
-        twist.linear.z = 0.0
-        twist.angular.x = 0.0
-        twist.angular.y = 0.0
-        twist.angular.z = 0.0
-        self.twist_pub.publish(twist)
+        self.twist_pub.publish(Twist())
 
         # initialize judge and car pose
         subprocess.call('bash ~/catkin_ws/src/ai_race/ai_race/reinforcement_learning/scripts/utils/reset.sh', shell=True)
@@ -188,10 +177,11 @@ class CarBot:
 
     def run(self):
         
+        self.episode = 0
         self.step = 0
         self.image_sub = rospy.Subscriber('front_camera/image_raw', Image, self.set_throttle_steering)
 
-        r = rospy.Rate(10)
+        r = rospy.Rate(30)
 
         while not rospy.is_shutdown():
 
@@ -213,5 +203,7 @@ class CarBot:
 if __name__ == "__main__":
     
     car_bot = CarBot()
+
+    time.sleep(3)
 
     car_bot.run()
