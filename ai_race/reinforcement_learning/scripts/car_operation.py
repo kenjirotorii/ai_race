@@ -206,3 +206,10 @@ class CarBot:
                 self.restart()
 
             r.sleep()
+
+
+if __name__ == "__main__":
+    
+    car_bot = CarBot()
+
+    car_bot.run()
