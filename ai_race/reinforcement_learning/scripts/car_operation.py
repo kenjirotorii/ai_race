@@ -36,7 +36,7 @@ class CarBot:
         if save_model_path:
             self.save_model_path = save_model_path
         else:
-            self.save_model_path = '../model/test.pth'
+            self.save_model_path = '../model_weight/test.pth'
 
         self.debug = debug
 
@@ -206,28 +206,30 @@ class CarBot:
         r = rospy.Rate(30)
 
         while not rospy.is_shutdown():
-
-            if (self.debug and self.course_out) or self.step > 2500:
+            
+            if self.debug:
+                if self.course_out or self.step > 2500:
                 
-                self.stop()
-                self.agent_training(n_epoch=20)
-                self.agent_model_save()
+                    self.stop()
+                    self.agent_training(n_epoch=20)
+                    self.agent_model_save()
 
-                self.episode += 1
-                # update target q-function every 2 episodes
-                if self.episode % 2 == 0:
-                    self.update_target_q()
+                    self.episode += 1
+                    # update target q-function every 2 episodes
+                    if self.episode % 2 == 0:
+                        self.update_target_q()
 
-                self.restart()
+                    self.restart()
 
             r.sleep()
         
 
 if __name__ == "__main__":
     
-    DEBUG = True
+    DEBUG = False
     SAVE_MODEL_PATH = '../model_weight/dqn_20210103_2.pth'
+    LOAD_MODEL_PATH = '../model_weight/dqn_20210103.pth'
 
-    car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, debug=DEBUG)
-
+    # car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, debug=DEBUG)
+    car_bot = CarBot(load_model_path=LOAD_MODEL_PATH, debug=DEBUG)
     car_bot.run()
