@@ -64,7 +64,6 @@ class CarBot:
 
         self.course_out = False
         self.episode = 0
-        self.max_step = 0
 
         # agent
         self.agent = Agent(num_actions=NUM_ACTIONS, mem_capacity=1000, batch_size=32, lr=0.0005, gamma=0.95, debug=self.debug)
@@ -98,12 +97,7 @@ class CarBot:
         image = image.to(DEVICE)
 
         if self.debug:
-            if self.max_step < 100:
-                eps = 0.25
-            elif self.max_step < 500:
-                eps = 0.1
-            else:
-                eps = 0.0
+            eps = 0.5 * (1 / (self.episode + 1))
         else:
             eps = 0.0
 
@@ -223,9 +217,6 @@ class CarBot:
                 # update target q-function every 2 episodes
                 if self.episode % 2 == 0:
                     self.update_target_q()
-
-                if self.step > self.max_step:
-                    self.max_step = self.step
 
                 self.restart()
 
