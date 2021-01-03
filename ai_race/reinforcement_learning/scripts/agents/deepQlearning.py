@@ -160,18 +160,11 @@ class Brain:
         self.main_q_network.load_state_dict(torch.load(model_path))
         self.update_target_q_network()
 
-    def decide_action(self, state, episode, epsilon):
+    def decide_action(self, state, epsilon):
         '''現在の状態に応じて、行動を決定する'''
         # ε-greedy法で徐々に最適行動のみを採用する
-        if self.debug:
-            if epsilon == 'auto':
-                eps = 0.5 * (1 / (episode + 1))
-            else:
-                eps = epsilon
-        else:
-            eps = 0.0
 
-        if eps <= np.random.uniform(0, 1):
+        if epsilon <= np.random.uniform(0, 1):
             self.main_q_network.eval()  # ネットワークを推論モードに切り替える
             with torch.no_grad():
                 output = self.main_q_network(state)
@@ -195,9 +188,9 @@ class Agent:
         '''Q関数を更新する'''
         self.brain.replay()
 
-    def get_action(self, state, episode, epsilon='auto'):
+    def get_action(self, state, epsilon):
         '''行動を決定する'''
-        action = self.brain.decide_action(state, episode, epsilon)
+        action = self.brain.decide_action(state, epsilon)
         return action
 
     def memorize(self, state, action, state_next, reward):

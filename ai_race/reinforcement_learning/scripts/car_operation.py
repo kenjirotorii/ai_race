@@ -63,6 +63,8 @@ class CarBot:
         self.rewards = []
 
         self.course_out = False
+        self.episode = 0
+        self.max_step = 0
 
         # agent
         self.agent = Agent(num_actions=NUM_ACTIONS, mem_capacity=1000, batch_size=32, lr=0.0005, gamma=0.95, debug=self.debug)
@@ -94,7 +96,18 @@ class CarBot:
 
         # get action from agent
         image = image.to(DEVICE)
-        action = self.agent.get_action(image, self.episode, epsilon='auto').to('cpu')
+
+        if self.debug:
+            if self.max_step < 100:
+                eps = 0.25
+            elif self.max_step < 500:
+                eps = 0.1
+            else:
+                eps = 0.0
+        else:
+            eps = 0.0
+
+        action = self.agent.get_action(state=image, epsilon=eps).to('cpu')
         self.actions.append(action)
 
         angular_z = float(float(action[0])-((NUM_ACTIONS-1)/2))/((NUM_ACTIONS-1)/2)
@@ -193,7 +206,6 @@ class CarBot:
 
     def run(self):
         
-        self.episode = 0
         self.step = 0
         self.image_sub = rospy.Subscriber('front_camera/image_raw', Image, self.set_throttle_steering)
 
@@ -211,6 +223,9 @@ class CarBot:
                 # update target q-function every 2 episodes
                 if self.episode % 2 == 0:
                     self.update_target_q()
+
+                if self.step > self.max_step:
+                    self.max_step = self.step
 
                 self.restart()
 
