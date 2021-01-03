@@ -220,7 +220,7 @@ class CarBot:
 if __name__ == "__main__":
     
     DEBUG = True
-    SAVE_MODEL_PATH = '../model_weight/dqn_20210103.pth'
+    SAVE_MODEL_PATH = '../model_weight/dqn_20210103_2.pth'
 
     car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, debug=DEBUG)
 
