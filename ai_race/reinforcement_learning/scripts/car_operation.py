@@ -23,7 +23,7 @@ from cv_bridge import CvBridge
 import torch
 import torchvision
 
-from utils.utility import state_transition, distance_from_centerline
+from utils.utility import state_transition, distance_from_centerline, distance_from_inline
 from agents.deepQlearning import Agent
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -127,15 +127,11 @@ class CarBot:
         rospy.loginfo('epi=%d, step=%d, action=%d, reward=%4.2f' % (self.episode, self.step, action, reward))
 
     def get_reward(self, pose):
-        dist_from_center = distance_from_centerline(pose)
-
-        if dist_from_center < 0.1:
-            return 1.0
-        elif dist_from_center < 0.2:
-            return 1.0
-        elif dist_from_center < 0.3:
-            return 1.0
-        elif dist_from_center < 0.4:
+        #dist_from_center = distance_from_centerline(pose)
+        dist_from_inline = distance_from_inline(pose)
+        
+        '''
+        if dist_from_center < 0.4:
             return 1.0
         elif dist_from_center < 0.45:
             return 0.0
@@ -145,6 +141,22 @@ class CarBot:
             self.course_out = True
             rospy.loginfo('Course Out !!')
             return -1.0
+        '''
+        if dist_from_inline < 0.0:
+            self.course_out = True
+            rospy.loginfo('Course Out !!')
+            return -1.0
+        elif dist_from_inline < 0.04:
+            return 0.0
+        elif dist_from_inline < 0.48:
+            return 1.0
+        elif dist_from_inline < 0.9:
+            return 0.0
+        else:
+            self.course_out = True
+            rospy.loginfo('Course Out !!')
+            return -1.0
+
 
     def stop(self):
         rospy.loginfo('***** EPISODE #%d *****' % (self.episode))
@@ -226,10 +238,12 @@ class CarBot:
 
 if __name__ == "__main__":
     
-    DEBUG = False
-    SAVE_MODEL_PATH = '../model_weight/dqn_20210103_2.pth'
+    DEBUG = True
+    SAVE_MODEL_PATH = '../model_weight/dqn_20210104.pth'
     LOAD_MODEL_PATH = '../model_weight/dqn_20210103.pth'
-
-    # car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, debug=DEBUG)
-    car_bot = CarBot(load_model_path=LOAD_MODEL_PATH, debug=DEBUG)
+    
+    if DEBUG:
+        car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, debug=DEBUG)
+    else:
+        car_bot = CarBot(load_model_path=LOAD_MODEL_PATH, debug=DEBUG)
     car_bot.run()

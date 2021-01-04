@@ -38,3 +38,36 @@ def distance_from_centerline(pose):
         return math.fabs(x + 328*scaler)
     else:
         return None
+
+
+def distance_from_inline(pose):
+    x = pose[0]
+    y = pose[1]
+    
+    scaler = 6.0 / 750
+
+    ref_xm = -70*scaler
+    ref_xp = 60*scaler
+    ref_ym = -138*scaler
+    ref_yp = 138*scaler
+    ref_r = 100*scaler
+
+    if x >= ref_xp and y >= ref_yp:
+        return np.sqrt((x - ref_xp)**2 + (y - ref_yp)**2) - ref_r
+    elif x <= ref_xm and y >= ref_yp:
+        return np.sqrt((x - ref_xm)**2 + (y - ref_yp)**2) - ref_r
+    elif x <= ref_xm and y <= ref_ym:
+        return np.sqrt((x - ref_xm)**2 + (y - ref_ym)**2) - ref_r
+    elif x >= ref_xp and y <= ref_ym:
+        return np.sqrt((x - ref_xp)**2 + (y - ref_ym)**2) - ref_r
+    elif x >= ref_xm and x <= ref_xp and y >= 0 and y >= x + 78*scaler and y >= -x + 68*scaler:
+        return y - 238*scaler
+    elif x >= ref_xm and x <= ref_xp and y <= 0 and y <= -x - 78*scaler and y <= x - 68*scaler:
+        return -y - 238*scaler
+    elif y >= ref_ym and y <= ref_yp and x >= -5*scaler and y <= x + 78*scaler and y >= -x - 78*scaler:
+        return x - 160*scaler
+    elif y >= ref_ym and y <= ref_yp and x <= -5*scaler and y <= -x + 68*scaler and y >= x - 68*scaler:
+        return -x - 160*scaler
+    else:
+        return None
+
