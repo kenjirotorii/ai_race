@@ -148,7 +148,7 @@ class CarBot:
             return -1.0
         elif dist_from_inline < 0.04:
             return 0.0
-        elif dist_from_inline < 0.48:
+        elif dist_from_inline < 0.44:
             return 1.0
         elif dist_from_inline < 0.9:
             return 0.0
@@ -239,11 +239,11 @@ class CarBot:
 if __name__ == "__main__":
     
     DEBUG = True
-    SAVE_MODEL_PATH = '../model_weight/dqn_20210104.pth'
-    LOAD_MODEL_PATH = '../model_weight/dqn_20210103.pth'
+    SAVE_MODEL_PATH = '../model_weight/dqn_20210104_2.pth'
+    LOAD_MODEL_PATH = '../model_weight/dqn_20210104.pth'
     
     if DEBUG:
-        car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, debug=DEBUG)
+        car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=True, load_model_path=LOAD_MODEL_PATH, debug=DEBUG)
     else:
         car_bot = CarBot(load_model_path=LOAD_MODEL_PATH, debug=DEBUG)
     car_bot.run()
