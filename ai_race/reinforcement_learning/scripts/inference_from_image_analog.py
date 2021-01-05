@@ -114,7 +114,7 @@ def parse_args():
 
     arg_parser.add_argument("--trt_conversion", action='store_true')
     arg_parser.add_argument("--trt_module", action='store_true')
-    arg_parser.add_argument("--pretrained_model", type=str, default='/home/jetson/catkin_ws/src/ai_race/ai_race/reinforcement_learning/model_weight/dqn_20210103.pth')
+    arg_parser.add_argument("--pretrained_model", type=str, default='/home/jetson/catkin_ws/src/ai_race/ai_race/reinforcement_learning/model_weight/dqn_20210104.pth')
     arg_parser.add_argument("--trt_model", type=str, default='road_following_model_trt.pth' )
 
     args = arg_parser.parse_args()

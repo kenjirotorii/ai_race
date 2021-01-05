@@ -127,21 +127,21 @@ class CarBot:
         rospy.loginfo('epi=%d, step=%d, action=%d, reward=%4.2f' % (self.episode, self.step, action, reward))
 
     def get_reward(self, pose):
-        #dist_from_center = distance_from_centerline(pose)
+        # dist_from_center = distance_from_centerline(pose)
+            
+        # if dist_from_center < 0.4:
+        #     return 1.0
+        # elif dist_from_center < 0.45:
+        #     return 0.0
+        # elif dist_from_center < 0.6:
+        #     return -1.0
+        # else:
+        #     self.course_out = True
+        #     rospy.loginfo('Course Out !!')
+        #     return -1.0
+        
         dist_from_inline = distance_from_inline(pose)
         
-        '''
-        if dist_from_center < 0.4:
-            return 1.0
-        elif dist_from_center < 0.45:
-            return 0.0
-        elif dist_from_center < 0.6:
-            return -1.0
-        else:
-            self.course_out = True
-            rospy.loginfo('Course Out !!')
-            return -1.0
-        '''
         if dist_from_inline < 0.0:
             self.course_out = True
             rospy.loginfo('Course Out !!')
