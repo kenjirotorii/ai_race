@@ -20,7 +20,7 @@ import torchvision
 
 from networks.simplenet import DQN
 
-DISCRETIZATION = 5
+DISCRETIZATION = 2
 
 model = None
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -89,7 +89,7 @@ def set_throttle_steer(data):
     output = np.argmax(outputs_np, axis=1)
     print(output)
 
-    angular_z = float(float(output)-((DISCRETIZATION-1)/2))/((DISCRETIZATION-1)/2)
+    angular_z = float(output)
 
     twist.linear.x = 1.6
     twist.linear.y = 0.0
@@ -114,7 +114,7 @@ def parse_args():
 
     arg_parser.add_argument("--trt_conversion", action='store_true')
     arg_parser.add_argument("--trt_module", action='store_true')
-    arg_parser.add_argument("--pretrained_model", type=str, default='/home/jetson/catkin_ws/src/ai_race/ai_race/reinforcement_learning/model_weight/dqn_20210104_2.pth')
+    arg_parser.add_argument("--pretrained_model", type=str, default='/home/jetson/catkin_ws/src/ai_race/ai_race/reinforcement_learning/model_weight/dqn_20210108_n2.pth')
     arg_parser.add_argument("--trt_model", type=str, default='road_following_model_trt.pth' )
 
     args = arg_parser.parse_args()

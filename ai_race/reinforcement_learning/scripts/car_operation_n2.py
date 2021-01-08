@@ -28,13 +28,13 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class CarBot:
 
-    def __init__(self, save_model_path=None, pretrained=False, load_model_path=None, online=False):
+    def __init__(self, save_model_path=None, pretrained=False, load_model_path=None, online=True):
         
         if save_model_path:
             self.save_model_path = save_model_path
         else:
             self.save_model_path = '../model_weight/test.pth'
-        
+
         self.online = online
 
         # node name
@@ -90,21 +90,21 @@ class CarBot:
 
         self.images.append(image)
 
+        # get action from agent
         image = image.to(DEVICE)
 
-        eps = 0.5 * (1 / (self.episode + 1))
+        if self.episode < 30:
+            eps = 0.2
+        else:
+            eps = 0.5 * (1 / (self.episode + 1))
 
-        # get action from agent
         action = self.agent.get_action(state=image, epsilon=eps).to('cpu')
-        
-        # transform action to angular
-        angular_z = float(float(action[0])-((NUM_ACTIONS-1)/2))/((NUM_ACTIONS-1)/2)
-        
         self.actions.append(action)
 
-        current_pose = np.array([self.odom_x, self.odom_y, self.odom_theta])        
+        angular_z = float(action[0])
+        current_pose = np.array([self.odom_x, self.odom_y, self.odom_theta])
         next_pose = state_transition(pose=current_pose, omega=angular_z, vel=1.6, dt=0.1)
-        
+
         reward = self.get_reward(next_pose)
         self.rewards.append(reward)
 
@@ -117,40 +117,29 @@ class CarBot:
         twist.angular.y = 0.0
         twist.angular.z = angular_z
         self.twist_pub.publish(twist)
-        
+
         if self.online:
             self.agent_training(n_epoch=1)
-
         self.step += 1
 
         rospy.loginfo('epi=%d, step=%d, action=%d, reward=%4.2f' % (self.episode, self.step, action, reward))
 
     def get_reward(self, pose):
-        # dist_from_center = distance_from_centerline(pose)
-            
-        # if dist_from_center < 0.4:
-        #     return 1.0
-        # elif dist_from_center < 0.45:
-        #     return 0.0
-        # elif dist_from_center < 0.6:
-        #     return -1.0
-        # else:
-        #     self.course_out = True
-        #     rospy.loginfo('Course Out !!')
-        #     return -1.0
         
         dist_from_inline = distance_from_inline(pose)
         
-        if dist_from_inline < 0.0:
+        if dist_from_inline < -0.08:
             self.course_out = True
             rospy.loginfo('Course Out !!')
             return -1.0
-        elif dist_from_inline < 0.04:
-            return 0.0
-        elif dist_from_inline < 0.44:
+        elif dist_from_inline < 0.0:
+            return -1.0
+        elif dist_from_inline < 0.25: # 0.3
             return 1.0
-        elif dist_from_inline < 0.9:
+        elif dist_from_inline < 0.4: # 0.5
             return 0.0
+        elif dist_from_inline < 0.9:
+            return -1.0
         else:
             self.course_out = True
             rospy.loginfo('Course Out !!')
@@ -221,12 +210,10 @@ class CarBot:
             if self.course_out or self.step > 2500:
                 
                 self.stop()
-
                 if self.step > 2500:
                     self.agent_model_save()
-
                 if not self.online:
-                    self.agent_training(n_epoch=25)
+                    self.agent_training(n_epoch=20)
 
                 self.episode += 1
                 # update target q-function every 2 episodes
@@ -240,9 +227,9 @@ class CarBot:
 
 if __name__ == "__main__":
     
-    SAVE_MODEL_PATH = '../model_weight/dqn_20210104a.pth'
-    LOAD_MODEL_PATH = '../model_weight/dqn_20210104.pt'
-    NUM_ACTIONS = 5
+    SAVE_MODEL_PATH = '../model_weight/dqn_20210109_n2.pth'
+    LOAD_MODEL_PATH = '../model_weight/dqn_20210108_n2.pth'
+    NUM_ACTIONS = 2
 
-    car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH)
+    car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH, online=True)
     car_bot.run()
