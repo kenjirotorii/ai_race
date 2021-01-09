@@ -45,7 +45,7 @@ def parse_args():
     arg_parser = argparse.ArgumentParser(description="Autonomous with inference")
 	
     arg_parser.add_argument("--pretrained_model", type=str)
-    arg_parser.add_argument("--trt_model", type=str, default='road_following_model_trt.pth' )
+    arg_parser.add_argument("--trt_model", type=str, default='~/catkin_ws/src/ai_race/ai_race/reinforcement_learning/trt_model/dqn_20210108_n2_trt.pth' )
 
     args = arg_parser.parse_args()
     return args
