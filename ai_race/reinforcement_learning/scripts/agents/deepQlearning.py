@@ -6,7 +6,6 @@ References:
     https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
     https://github.com/YutaroOgawa/Deep-Reinforcement-Learning-Book/blob/master/program/6_3_DuelingNetwork.ipynb
 '''
-
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -57,7 +56,7 @@ class Memory:
 
 class Brain:
 
-    def __init__(self, num_actions, mem_capacity, batch_size, lr, gamma, debug):
+    def __init__(self, img_size, num_actions, mem_capacity, batch_size, lr, gamma, debug):
 
         # parameters
         self.num_actions = num_actions
@@ -69,8 +68,8 @@ class Brain:
         self.memory = Memory(capacity=mem_capacity)
 
         # network
-        self.main_q_network = DQN(120, 320, num_actions).to(DEVICE)
-        self.target_q_network = DQN(120, 320, num_actions).to(DEVICE)
+        self.main_q_network = DQN(img_size[0], img_size[1], num_actions).to(DEVICE)
+        self.target_q_network = DQN(img_size[0], img_size[1], num_actions).to(DEVICE)
 
         # optimizer
         self.optimizer = optim.Adam(self.main_q_network.parameters(), lr=lr)
@@ -180,9 +179,9 @@ class Brain:
 
 class Agent:
 
-    def __init__(self, num_actions=3, mem_capacity=1000, batch_size=32, lr=0.0001, gamma=0.99, debug=True):
+    def __init__(self, img_size=(120, 320), num_actions=3, mem_capacity=1000, batch_size=32, lr=0.0001, gamma=0.99, debug=True):
         '''課題の状態と行動の数を設定する'''
-        self.brain = Brain(num_actions, mem_capacity, batch_size, lr, gamma, debug)  # エージェントが行動を決定するための頭脳を生成
+        self.brain = Brain(img_size, num_actions, mem_capacity, batch_size, lr, gamma, debug)  # エージェントが行動を決定するための頭脳を生成
 
     def update_q_function(self):
         '''Q関数を更新する'''

@@ -63,7 +63,7 @@ class CarBot:
         self.episode = 0
 
         # agent
-        self.agent = Agent(num_actions=NUM_ACTIONS, mem_capacity=1000, batch_size=32, lr=0.0005, gamma=0.95, debug=True)
+        self.agent = Agent(img_size=(120, 320), num_actions=NUM_ACTIONS, mem_capacity=CAPACITY, batch_size=BATCH_SIZE, lr=LR, gamma=GAMMA, debug=True)
 
         if pretrained:
             self.agent.load_model(model_path=load_model_path)
@@ -230,7 +230,7 @@ class CarBot:
 
                 self.episode += 1
                 # update target q-function every 2 episodes
-                if self.episode % 2 == 0:
+                if self.episode % TARGET_UPDATE == 0:
                     self.update_target_q()
 
                 self.restart()
@@ -242,7 +242,13 @@ if __name__ == "__main__":
     
     SAVE_MODEL_PATH = '../model_weight/dqn_20210104a.pth'
     LOAD_MODEL_PATH = '../model_weight/dqn_20210104.pt'
+
     NUM_ACTIONS = 5
+    CAPACITY = 1000
+    BATCH_SIZE = 32
+    LR = 0.0005
+    GAMMA = 0.95
+    TARGET_UPDDATE = 2
 
     car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH)
     car_bot.run()

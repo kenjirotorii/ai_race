@@ -61,9 +61,10 @@ class CarBot:
 
         self.course_out = False
         self.episode = 0
+        self.complete = 0
 
         # agent
-        self.agent = Agent(num_actions=NUM_ACTIONS, mem_capacity=1000, batch_size=32, lr=0.0005, gamma=0.95, debug=True)
+        self.agent = Agent(img_size=(120, 320), num_actions=NUM_ACTIONS, mem_capacity=CAPACITY, batch_size=BATCH_SIZE, lr=LR, gamma=GAMMA, debug=True)
 
         if pretrained:
             self.agent.load_model(model_path=load_model_path)
@@ -95,8 +96,12 @@ class CarBot:
 
         if self.episode < 30:
             eps = 0.2
-        else:
+        elif self.episode < 50:
+            eps = 0.1
+        elif self.episode < 100:
             eps = 0.5 * (1 / (self.episode + 1))
+        else:
+            eps = 0.0
 
         action = self.agent.get_action(state=image, epsilon=eps).to('cpu')
         self.actions.append(action)
@@ -128,15 +133,15 @@ class CarBot:
         
         dist_from_inline = distance_from_inline(pose)
         
-        if dist_from_inline < -0.08:
+        if dist_from_inline < -0.10:
             self.course_out = True
             rospy.loginfo('Course Out !!')
             return -1.0
-        elif dist_from_inline < 0.0:
+        elif dist_from_inline < 0:
             return -1.0
-        elif dist_from_inline < 0.25: # 0.3
+        elif dist_from_inline < 0.3: # 0.3
             return 1.0
-        elif dist_from_inline < 0.4: # 0.5
+        elif dist_from_inline < 0.45: # 0.5
             return 0.0
         elif dist_from_inline < 0.9:
             return -1.0
@@ -211,14 +216,18 @@ class CarBot:
                 
                 self.stop()
                 if self.step > 2500:
+                    self.complete += 1
                     self.agent_model_save()
                 if not self.online:
                     self.agent_training(n_epoch=20)
 
                 self.episode += 1
                 # update target q-function every 2 episodes
-                if self.episode % 2 == 0:
+                if self.episode % TARGET_UPDATE == 0:
                     self.update_target_q()
+                
+                if self.complete >= 5:
+                    break
 
                 self.restart()
 
@@ -229,7 +238,14 @@ if __name__ == "__main__":
     
     SAVE_MODEL_PATH = '../model_weight/dqn_20210109_n2.pth'
     LOAD_MODEL_PATH = '../model_weight/dqn_20210108_n2.pth'
+    
+    # parameters
     NUM_ACTIONS = 2
+    CAPACITY = 2500
+    BATCH_SIZE = 64
+    LR = 0.0005
+    GAMMA = 0.995
+    TARGET_UPDATE = 2
 
     car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH, online=True)
     car_bot.run()
