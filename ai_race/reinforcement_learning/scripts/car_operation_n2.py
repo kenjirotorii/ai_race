@@ -139,9 +139,9 @@ class CarBot:
             return -1.0
         elif dist_from_inline < 0:
             return -1.0
-        elif dist_from_inline < 0.3: # 0.3
+        elif dist_from_inline < 0.25: # 0.3
             return 1.0
-        elif dist_from_inline < 0.45: # 0.5
+        elif dist_from_inline < 0.5: # 0.5
             return 0.0
         elif dist_from_inline < 0.9:
             return -1.0
@@ -215,19 +215,22 @@ class CarBot:
             if self.course_out or self.step > 2500:
                 
                 self.stop()
+
                 if self.step > 2500:
                     self.complete += 1
+                    if self.complete >= 3:
+                        break
                     self.agent_model_save()
+                else:
+                    self.complete = 0
+                
                 if not self.online:
-                    self.agent_training(n_epoch=20)
+                    self.agent_training(n_epoch=50)
 
                 self.episode += 1
                 # update target q-function every 2 episodes
                 if self.episode % TARGET_UPDATE == 0:
                     self.update_target_q()
-                
-                if self.complete >= 5:
-                    break
 
                 self.restart()
 
@@ -242,9 +245,9 @@ if __name__ == "__main__":
     # parameters
     NUM_ACTIONS = 2
     CAPACITY = 2500
-    BATCH_SIZE = 64
+    BATCH_SIZE = 32
     LR = 0.0005
-    GAMMA = 0.995
+    GAMMA = 0.99
     TARGET_UPDATE = 2
 
     car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH, online=True)
