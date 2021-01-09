@@ -239,8 +239,8 @@ class CarBot:
 
 if __name__ == "__main__":
     
-    SAVE_MODEL_PATH = '../model_weight/dqn_20210109_n2.pth'
-    LOAD_MODEL_PATH = '../model_weight/dqn_20210108_n2.pth'
+    SAVE_MODEL_PATH = '../model_weight/dqn_20210109.pth'
+    LOAD_MODEL_PATH = '../model_weight/dqn_20210108.pth'
     
     # parameters
     NUM_ACTIONS = 2
