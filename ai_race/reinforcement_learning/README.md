@@ -52,6 +52,15 @@ $ bash prepare.sh
 
 ### 2. 強化学習スクリプトを実行
 
+#### 2.1 jetson nano
+
+```bash
+$ cd ~/catkin_ws/src/ai_race/ai_race/reinforcement_learning/scripts
+$ python car_operation_jetson.py
+```
+
+#### 2.2 マシンスペックの高い PC
+
 ```bash
 $ cd ~/catkin_ws/src/ai_race/ai_race/reinforcement_learning/scripts
 $ python car_operation.py
