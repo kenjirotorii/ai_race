@@ -3,8 +3,13 @@
 
 import rospy
 from geometry_msgs.msg import Twist
-from turtlesim.msg import Pose
 from sensor_msgs.msg import Image
+from nav_msgs.msg import Odometry
+from std_msgs.msg import String
+
+import json
+import tf
+from tf.transformations import euler_from_quaternion
 
 import pygame
 from pygame.locals import *
@@ -28,7 +33,9 @@ class keyboardController:
         rospy.init_node('keyboard_con_node', anonymous=True)
         self.twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
         self.image_sub = rospy.Subscriber('front_camera/image_raw', Image, self.callback)
-        
+        self.pose_sub = rospy.Subscriber('/tracker', Odometry, self.callback_odom)
+        self.state_sub = rospy.Subscriber('/gamestate', String, self.callback_state)
+
         #ボタン関係の初期化
         self.current_button = -1
         self.joystickx = 0
@@ -52,6 +59,14 @@ class keyboardController:
         twist.angular.z = 0.0
         self.twist_pub.publish(twist)
         
+        # odom
+        self.odom_x = 0.0
+        self.odom_y = 0.0
+        self.odom_theta = 0.0
+        
+        # lap count
+        self.lap_count = 0
+
         self.images = []
         self.command = []
         self.tocsv = []
@@ -91,6 +106,21 @@ class keyboardController:
     def callback(self, image):
         self.current_img = image
     
+    def callback_odom(self, msg):
+        self.odom_x = msg.pose.pose.position.x
+        self.odom_y = msg.pose.pose.position.y
+        qx = msg.pose.pose.orientation.x
+        qy = msg.pose.pose.orientation.y
+        qz = msg.pose.pose.orientation.z
+        qw = msg.pose.pose.orientation.w
+        q = (qx, qy, qz, qw)
+        e = euler_from_quaternion(q)
+        self.odom_theta = e[2]
+    
+    def callback_state(self, msg):
+        json_dict = json.loads(msg.data)
+        self.lap_count = int(json_dict['judge_info']['lap_count'])
+        
     def callback_org(self):
         print rospy.Time.now()
         global INFERENCE_TIME
@@ -187,7 +217,11 @@ class keyboardController:
         self.images.append(CvBridge().imgmsg_to_cv2(self.current_img, "bgr8"))
         self.command.append(twist.angular.z)
 
+<<<<<<< HEAD
         self.tocsv.append([self.frame_n, self.outputimagedir+"/image"+str(self.frame_n).zfill(5)+".jpg",twist.angular.z+1 ])
+=======
+        self.tocsv.append([self.frame_n, self.outputimagedir+"/image"+str(self.frame_n).zfill(5)+".jpg",twist.angular.z, self.lap_count, self.odom_x, self.odom_y, self.odom_theta])
+>>>>>>> dev_torii
         self.frame_n += 1
 
         if self.button_cnt>=10:
