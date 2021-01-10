@@ -77,11 +77,17 @@ if __name__ == "__main__":
 ```
 
 `SAVE_MODEL_PATH` : モデルの保存先のパス
+
 `LOAD_MODEL_PATH` : 読み込むモデルのパス
+
 `NUM_ACTIONS` : 操作の数(car_operation.py では`2`でしか動作しない。car_operation_analog.py では自由に設定可能)
+
 `CAPACITY` : Experience Replay でのメモリの容量
+
 `LR` : ネットワークの学習率
+
 `GAMMA` : 割引率
+
 `TARGET_UPDATE` : target のネットワークを更新する頻度
 
 また、Q-learning ではオンライン学習が望ましいが、シミュレータを動かしながらそれをするのにはある程度のマシンスペックが必要となるため、マシンスペックの低い jetson nano でも動作できるようにオンライン学習をするかを設定できるようにした。(`online=False`によりオンライン学習をしないように設定できる)
