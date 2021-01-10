@@ -52,14 +52,14 @@ $ bash prepare.sh
 
 ### 2. 強化学習スクリプトを実行
 
-#### 2.1 jetson nano
+#### 2.1. jetson nano の場合
 
 ```bash
 $ cd ~/catkin_ws/src/ai_race/ai_race/reinforcement_learning/scripts
 $ python car_operation_jetson.py
 ```
 
-#### 2.2 マシンスペックの高い PC
+#### 2.2. マシンスペックの高い PC の場合
 
 ```bash
 $ cd ~/catkin_ws/src/ai_race/ai_race/reinforcement_learning/scripts
@@ -106,6 +106,29 @@ car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_p
 ```
 
 オフライン学習の場合、各エピソードの終了時にまとめてネットワークの学習を行うようになっている。
+
+## 推論での走行
+
+### 1. Gazebo の起動
+
+```bash
+$ cd ~/catkin_ws/src/ai_race/scripts
+$ bash prepare.sh
+```
+
+### 2. 推論走行スクリプトを実行
+
+```bash
+$ cd ~/catkin_ws/src/ai_race/ai_race/reinforcement_learning/scripts
+$ python inference_from_image.py --pretrained_model <model path>
+```
+
+or
+
+```bash
+$ cd ~/catkin_ws/src/ai_race/ai_race/reinforcement_learning/scripts
+$ python inference_from_image.py -trt_module --trt_model <model path>
+```
 
 ## 報酬関数
 
