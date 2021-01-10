@@ -2,22 +2,27 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 import torchvision
 import torchvision.transforms as transforms
 import torchvision.models as models
 
 import os
+import sys
 import io
 import argparse
+import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.metrics import f1_score
-from sklearn.model_selection import train_test_split
 from MyDataSet import MyDataset
 from samplenet import SampleNet, SimpleNet
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../config")
+import learning_config
+
+DISCRETIZATION = learning_config.Discretization_number
 
 
 def main():
@@ -26,23 +31,28 @@ def main():
 	
 	# Set device.
 	device = 'cuda' if torch.cuda.is_available() else 'cpu'
-	ROOT_DIR = ""
-	imgDataset = MyDataset(args.data_csv, ROOT_DIR, transform=transforms.ToTensor())
-	# Load dataset.
-	train_data, test_data = train_test_split(imgDataset, test_size=0.2)
-	pd.to_pickle(test_data, "test_data.pkl")
-	del test_data
+
+	# Prepare dataset.
+	np.random.seed(seed=0)
+	image_dataframe = pd.read_csv(args.data_csv, engine='python', header=None)
+	image_dataframe = image_dataframe.reindex(np.random.permutation(image_dataframe.index))
+	test_num = int(len(image_dataframe) * 0.2)
+	train_dataframe = image_dataframe[test_num:]
+	test_dataframe = image_dataframe[:test_num]
+	train_data = MyDataset(train_dataframe, transform=transforms.ToTensor())
+	test_data = MyDataset(test_dataframe, transform=transforms.ToTensor())
 	train_loader = torch.utils.data.DataLoader(train_data, batch_size=20, shuffle=True)
+	test_loader = torch.utils.data.DataLoader(test_data, batch_size=20)
 	
 	print('data set')
 	# Set a model.
 	if args.model == 'resnet18':
 		model = models.resnet18()
-		model.fc = torch.nn.Linear(512, 3)
+		model.fc = torch.nn.Linear(512, DISCRETIZATION)
 	elif args.model == 'samplenet':
-		model = SampleNet()
+		model = SampleNet(DISCRETIZATION)
 	elif args.model == 'simplenet':
-		model = SimpleNet()
+		model = SimpleNet(DISCRETIZATION)
 	else:
 		raise NotImplementedError()
 	model.train()
@@ -63,19 +73,11 @@ def main():
 		
 		# Output score.
 		if(epoch%args.test_interval == 0):
-			pd.to_pickle(train_data, "train_data.pkl")
-			del train_data
-			
-			test_data = pd.read_pickle("test_data.pkl")
-			test_loader = torch.utils.data.DataLoader(test_data, batch_size=20, shuffle=True)
-			del test_data
 			test_acc, test_loss = test(model, device, test_loader, criterion)
-			del test_loader
 
 			stdout_temp = 'epoch: {:>3}, train acc: {:<8}, train loss: {:<8}, test acc: {:<8}, test loss: {:<8}'
 			print(stdout_temp.format(epoch+1, train_acc, train_loss, test_acc, test_loss))
 
-			train_data = pd.read_pickle("train_data.pkl")
 		else:	
 			stdout_temp = 'epoch: {:>3}, train acc: {:<8}, train loss: {:<8}' #, test acc: {:<8}, test loss: {:<8}'
 			print(stdout_temp.format(epoch+1, train_acc, train_loss)) #, test_acc, test_loss))

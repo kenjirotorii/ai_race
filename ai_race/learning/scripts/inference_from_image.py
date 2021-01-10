@@ -27,6 +27,13 @@ from cv_bridge import CvBridge
 
 from samplenet import SampleNet, SimpleNet
 
+import sys
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../config")
+import learning_config
+
+DISCRETIZATION = learning_config.Discretization_number
+
 model = None
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -35,11 +42,11 @@ def init_inference():
     global device
     if args.model == 'resnet18':
         model = models.resnet18()
-        model.fc = torch.nn.Linear(512, 3)
+        model.fc = torch.nn.Linear(512, DISCRETIZATION)
     elif args.model == 'samplenet':
-        model = SampleNet()
+        model = SampleNet(DISCRETIZATION)
     elif args.model == 'simplenet':
-        model = SimpleNet()
+        model = SimpleNet(DISCRETIZATION)
     else:
         raise NotImplementedError()
     model.eval()
@@ -104,8 +111,7 @@ def set_throttle_steer(data):
     output = np.argmax(outputs_np, axis=1)
     print(output)
     
-    #angular_z = (float(output)-256)/100
-    angular_z = (float(output)-1)
+    angular_z = float(float(output)-((DISCRETIZATION-1)/2))/((DISCRETIZATION-1)/2)
     twist.linear.x = 1.6
     twist.linear.y = 0.0
     twist.linear.z = 0.0
@@ -121,7 +127,8 @@ def inference_from_image():
     global twist_pub
     rospy.init_node('inference_from_image', anonymous=True)
     twist_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
-    rospy.Subscriber("/front_camera/image_raw", Image, set_throttle_steer)
+    image_topic_name = args.image_topic_name
+    rospy.Subscriber(image_topic_name, Image, set_throttle_steer)
     r = rospy.Rate(10)
     #while not rospy.is_shutdown():
     #    r.sleep()
@@ -137,6 +144,7 @@ def parse_args():
 	arg_parser.add_argument("--trt_module", action='store_true')
 	arg_parser.add_argument("--pretrained_model", type=str, default='/home/shiozaki/work/experiments/models/checkpoints/sim_race_joycon_ResNet18_6_epoch=20.pth')
 	arg_parser.add_argument("--trt_model", type=str, default='road_following_model_trt.pth' )
+	arg_parser.add_argument("--image_topic_name", type=str, default='/front_camera/image_raw' )
 
 	args = arg_parser.parse_args()
 
