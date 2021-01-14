@@ -98,8 +98,6 @@ class CarBot:
             eps = 0.2
         elif self.episode < 50:
             eps = 0.1
-        elif self.episode < 100:
-            eps = 0.5 * (1 / (self.episode + 1))
         else:
             eps = 0.0
 
@@ -138,8 +136,8 @@ class CarBot:
             rospy.loginfo('Course Out !!')
             return -1.0
         elif dist_from_inline < 0:
-            return -1.0
-        elif dist_from_inline < 0.25: # 0.3
+            return -0.5
+        elif dist_from_inline < 0.2: # 0.3
             return 1.0
         elif dist_from_inline < 0.5: # 0.5
             return 0.0
@@ -225,7 +223,7 @@ class CarBot:
                     self.complete = 0
                 
                 if not self.online:
-                    self.agent_training(n_epoch=50)
+                    self.agent_training(n_epoch=25)
 
                 self.episode += 1
                 # update target q-function every 2 episodes
@@ -239,16 +237,16 @@ class CarBot:
 
 if __name__ == "__main__":
     
-    SAVE_MODEL_PATH = '../model_weight/dqn_20210109.pth'
+    SAVE_MODEL_PATH = '../model_weight/dqn_20210113.pth'
     LOAD_MODEL_PATH = '../model_weight/dqn_20210108.pth'
     
     # parameters
     NUM_ACTIONS = 2
-    CAPACITY = 2500
+    CAPACITY = 1000
     BATCH_SIZE = 32
     LR = 0.0005
     GAMMA = 0.99
-    TARGET_UPDATE = 2
+    TARGET_UPDATE = 3
 
-    car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH, online=True)
+    car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH, online=False)
     car_bot.run()
