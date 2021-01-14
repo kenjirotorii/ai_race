@@ -139,7 +139,7 @@ class CarBot:
             return -0.5
         elif dist_from_inline < 0.2: # 0.3
             return 1.0
-        elif dist_from_inline < 0.5: # 0.5
+        elif dist_from_inline < 0.45: # 0.5
             return 0.0
         elif dist_from_inline < 0.9:
             return -1.0
@@ -237,7 +237,7 @@ class CarBot:
 
 if __name__ == "__main__":
     
-    SAVE_MODEL_PATH = '../model_weight/dqn_20210113.pth'
+    SAVE_MODEL_PATH = '../model_weight/dqn_20210114.pth'
     LOAD_MODEL_PATH = '../model_weight/dqn_20210108.pth'
     
     # parameters
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     CAPACITY = 1000
     BATCH_SIZE = 32
     LR = 0.0005
-    GAMMA = 0.99
+    GAMMA = 0.995
     TARGET_UPDATE = 3
 
     car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH, online=False)
