@@ -98,8 +98,6 @@ class CarBot:
             eps = 0.2
         elif self.episode < 50:
             eps = 0.1
-        elif self.episode < 100:
-            eps = 0.5 * (1 / (self.episode + 1))
         else:
             eps = 0.0
 
@@ -138,10 +136,10 @@ class CarBot:
             rospy.loginfo('Course Out !!')
             return -1.0
         elif dist_from_inline < 0:
-            return -1.0
-        elif dist_from_inline < 0.45: # 0.3
+            return -0.5
+        elif dist_from_inline < 0.2: # 0.3
             return 1.0
-        elif dist_from_inline < 0.7: # 0.5
+        elif dist_from_inline < 0.45: # 0.5
             return 0.0
         elif dist_from_inline < 0.9:
             return -1.0
@@ -217,7 +215,12 @@ class CarBot:
                 self.stop()
                 if self.step > 2500:
                     self.complete += 1
+                    if self.complete >= 3:
+                        break
                     self.agent_model_save()
+                else:
+                    self.complete = 0
+
                 if not self.online:
                     self.agent_training(n_epoch=20)
 
@@ -225,9 +228,6 @@ class CarBot:
                 # update target q-function every 2 episodes
                 if self.episode % TARGET_UPDATE == 0:
                     self.update_target_q()
-                
-                if self.complete >= 5:
-                    break
 
                 self.restart()
 
@@ -236,7 +236,7 @@ class CarBot:
 
 if __name__ == "__main__":
     
-    SAVE_MODEL_PATH = '../model_weight/dqn_20210109_jetson.pth'
+    SAVE_MODEL_PATH = '../model_weight/dqn_20210114_jetson.pth'
     LOAD_MODEL_PATH = '../model_weight/dqn_20210108.pth'
     
     # parameters
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     BATCH_SIZE = 32
     LR = 0.0005
     GAMMA = 0.99
-    TARGET_UPDATE = 2
+    TARGET_UPDATE = 3
 
     car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH, online=False)
     car_bot.run()
