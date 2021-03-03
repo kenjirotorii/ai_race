@@ -39,6 +39,7 @@
  
   <gazebo reference="base_footprint">
     <turnGravityOff>false</turnGravityOff>
+    <static>true</static>
   </gazebo>
  
   <!-- BASE-LINK -->
@@ -75,6 +76,7 @@
  
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so" />
+    <static>true</static>
   </gazebo>
  
 

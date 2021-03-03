@@ -4,6 +4,7 @@ import dynamic_reconfigure.client
 import time
 
 from gazebo_msgs.msg import ModelStates
+from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
 import requests
 import json
@@ -12,11 +13,11 @@ import json
 MAX_SPEED_W = 0.5
 
 #Level1 Parameters
-Ly = 1
-Lx = 1.1
-r  = 0.5
-Ly_out = 3.0
-Lx_out = 2.5
+Ly = 1.04
+Lx = 1.2
+r  = 0.75
+Ly_out = 2.85
+Lx_out = 2.25
 
 x = 1.6
 y = 0.0
@@ -47,6 +48,12 @@ def xy_update(data):
     except ValueError:
         #print ('can not get model.name.index, skip !!')
         pass
+
+def callback_odom(msg):
+    global x
+    global y
+    x = msg.pose.pose.position.x
+    y = msg.pose.pose.position.y
 
 def judge_course_l1():
     global dynamic_client
@@ -100,7 +107,8 @@ def course_out_surveillance():
     global dynamic_client
     rospy.init_node('course_out_surveillance', anonymous=True)
     dynamic_client = dynamic_reconfigure.client.Client("dynamic_recon_server_node", timeout=30, config_callback=dynamic_recon_callback)
-    rospy.Subscriber("/gazebo/model_states", ModelStates, xy_update, queue_size = 10)
+    #rospy.Subscriber("/gazebo/model_states", ModelStates, xy_update, queue_size = 10)
+    rospy.Subscriber('/wheel_robot_tracker', Odometry, callback_odom)
 
     rate = rospy.Rate(10)
     while not rospy.is_shutdown():
