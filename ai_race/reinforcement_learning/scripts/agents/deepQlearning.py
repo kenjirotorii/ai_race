@@ -122,12 +122,22 @@ class Brain:
 
         # next_stateがあるかをチェックするインデックスマスクを作成
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, self.batch.next_state)), dtype=torch.bool).to(DEVICE)
+        
+        a_m = torch.zeros(self.batch_size).type(torch.LongTensor).to(DEVICE)
+
+        # 次の状態での最大Q値の行動a_mをMain Q-Networkから求める
+        # 最後の[1]で行動に対応したindexが返る
+        a_m[non_final_mask] = self.main_q_network(
+            self.non_final_next_states).detach().max(1)[1]
+
+        # 次の状態があるものだけにフィルター
+        a_m_non_final_next_states = a_m[non_final_mask].view(-1, 1)
 
         # まずは全部0にしておく
         next_state_values = torch.zeros(self.batch_size).to(DEVICE)
 
         # 次の状態があるindexの、最大となるQ値をtarget Q-Networkから求める
-        next_state_values[non_final_mask] = self.target_q_network(self.non_final_next_states).max(1)[0].detach()
+        next_state_values[non_final_mask] = self.target_q_network(self.non_final_next_states).gather(1, a_m_non_final_next_states).detach().squeeze()
 
         # 3.4 教師となるQ(s_t, a_t)値を、Q学習の式から求める
         expected_state_action_values = self.reward_batch + self.gamma * next_state_values

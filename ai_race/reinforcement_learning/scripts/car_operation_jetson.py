@@ -44,7 +44,7 @@ class CarBot:
         self.twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
         # Subscriber
-        self.pose_sub = rospy.Subscriber('/tracker', Odometry, self.callback_odom)
+        self.pose_sub = rospy.Subscriber('wheel_robot_tracker', Odometry, self.callback_odom)
 
         # Initial twist
         self.twist_pub.publish(Twist())
@@ -137,9 +137,9 @@ class CarBot:
             return -1.0
         elif dist_from_inline < 0:
             return -0.5
-        elif dist_from_inline < 0.2: # 0.3
+        elif dist_from_inline < 0.3:
             return 1.0
-        elif dist_from_inline < 0.45: # 0.5
+        elif dist_from_inline < 0.5:
             return 0.0
         elif dist_from_inline < 0.9:
             return -1.0
@@ -236,8 +236,8 @@ class CarBot:
 
 if __name__ == "__main__":
     
-    SAVE_MODEL_PATH = '../model_weight/dqn_20210114_jetson.pth'
-    LOAD_MODEL_PATH = '../model_weight/dqn_20210108.pth'
+    SAVE_MODEL_PATH = '../model_weight/dqn_test_20210311.pth'
+    LOAD_MODEL_PATH = None
     
     # parameters
     NUM_ACTIONS = 2
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     BATCH_SIZE = 32
     LR = 0.0005
     GAMMA = 0.99
-    TARGET_UPDATE = 3
+    TARGET_UPDATE = 5
 
     car_bot = CarBot(save_model_path=SAVE_MODEL_PATH, pretrained=False, load_model_path=LOAD_MODEL_PATH, online=False)
     car_bot.run()
