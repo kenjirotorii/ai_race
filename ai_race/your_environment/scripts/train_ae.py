@@ -134,8 +134,9 @@ def inference_and_save(model, file_name=None, device="cpu", save_path=None, crop
     epoch_path = save_path + "/epoch_" + str(epoch)
     if not os.path.exists(epoch_path):
         os.mkdir(epoch_path)
-
-    for s in SEASON:
+    
+    styles = SEASON + ["normal"]
+    for s in styles:
         img_path = BASE_PATH + s + "/images/" + file_name
         img = get_img(img_path, crop)
         img = transforms.ToTensor()(img.copy())
@@ -200,7 +201,7 @@ def run_training(seed, train_path, valid_path, variational=False):
             torch.save(model.state_dict(), model_path)
 
         # inference test data
-        if epoch % 5 == 0:
+        if epoch % INF_INTERVAL == 0:
             inference_path = random.sample(valid_path, 5)
             for path in inference_path:
                 inference_and_save(model, path, DEVICE, SAVE_PATH, IMG_CROP, variational, epoch)
@@ -226,19 +227,23 @@ def main():
 
 if __name__ == "__main__":
     
+    # config
     BASE_PATH = "/home/jetson/"
-    SAVE_PATH = BASE_PATH + "vae_results"
+    SAVE_PATH = BASE_PATH + "test_ae"
     SEASON = ["spring", "summer", "autumn", "winter"]
     DEVICE = ('cuda' if torch.cuda.is_available() else 'cpu')
     
+    # parameter
     NUM_Z = 128
     R_LOSS_FACTOR = 1
     BATCH_SIZE = 32
     LEARNING_RATE = 1e-5
     WEIGHT_DECAY = 1e-5
-    EPOCHS = 100
+    EPOCHS = 50
     SEED = 42
+    INF_INTERVAL = 2
     IMG_CROP = True
     VARIATIONAL = False
     
+    # main function
     main()
