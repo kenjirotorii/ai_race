@@ -118,6 +118,18 @@ class ControlHead(nn.Module):
         return x
 
 
+class VAELoss(nn.Module):
+    def __init__(self):
+        super(VAELoss, self).__init__()
+
+        self.recon = nn.MSELoss()
+
+    def forward(self, y_pred, y_true, mu, lnvar, weight):
+        mse = self.recon(y_pred, y_true)
+        kl = -0.5 * torch.sum(1 + lnvar - mu.pow(2) - lnvar.exp())
+        return weight * mse + kl
+
+
 if __name__ == "__main__":
 
     h = 120
