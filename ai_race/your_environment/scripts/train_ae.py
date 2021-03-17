@@ -2,6 +2,7 @@ import os
 import sys
 import cv2
 import random
+import glob
 
 import numpy as np
 import torch
@@ -10,7 +11,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
-from autoencoder import Autoencoder
+from autoencoder import Autoencoder, VAE, VAELoss
 
 
 def seed_everything(seed=42):
@@ -28,49 +29,40 @@ def get_img(path, crop=True):
     im_rgb = im_bgr[:, :, ::-1]
     if crop:
         h = im_rgb.shape[0]
-        im_rgb = im_rgb[round(h/2):, :, :]
+        im_rgb = im_rgb[int(h/2):, :, :]
+        
     return im_rgb
 
 
 class AEDataSet(Dataset):
-    def __init__(self, path_dict, transdorm=None, crop=True):
+    def __init__(self, path_list, transdorm=None, crop=True):
         """DataSet for Autoencoder
 
         Args:
-            path_dict (dict): [description]
-                {
-                    0: {
-                        "spring": "xxx.jpg",
-                        "summer": "xxx.jpg",
-                        "autumn": "xxx.jpg",
-                        "winter": "xxx.jpg",
-                        "normal": "xxx.jpg"
-                    },
-                    ...
-                }
+            path_list (list): image file names
             transdorm ([type], optional): [description]. Defaults to None.
         """
-        self.path_dict = path_dict
+        self.path_list = path_list
         self.transform = transdorm
-        self.input_imgs = ["spring", "summer", "autumn", "winter"]
-        self.target_img = "normal"
+        self.crop = crop
 
     def __len__(self):
-        return len(self.path_dict)
+        return len(self.path_list)
 
     def __getitem__(self, idx):
-        input_paths = [self.path_dict[idx][img] for img in self.input_imgs]
-        inputs = [get_img(path, crop) for path in input_paths]
-        target = get_img(self.path_dict[idx][self.target_img], crop)
-
+        input_paths = [BASE_PATH + s + "/images/" + self.path_list[idx] for s in SEASON]
+        inputs = [get_img(path, self.crop) for path in input_paths]
+        target_path = BASE_PATH + "normal/images/" + self.path_list[idx]
+        target = get_img(target_path, self.crop)
+        
         if self.transform:
-          inputs = [self.transform(img) for img in inputs]
-          target = self.transform(target)
+            inputs = [self.transform(img.copy()) for img in inputs]
+            target = self.transform(target.copy())
 
         return inputs, target
 
 
-def train_fn(model, optimizer, scheduler, loss_fn, dataloader, device):
+def train_fn(model, optimizer, scheduler, loss_fn, dataloader, device, variational):
 
     model.train()
     final_loss = 0
@@ -81,14 +73,18 @@ def train_fn(model, optimizer, scheduler, loss_fn, dataloader, device):
 
         for img in inputs:
             img = img.to(device)
-            outputs = model(img)
-            loss = loss_fn(outputs, targets)
+            if variational:
+                y_pred, mu, lnvar = model(img)
+                loss = loss_fn(y_pred, targets, mu, lnvar, R_LOSS_FACTOR)
+            else:
+                y_pred = model(img)
+                loss = loss_fn(y_pred, targets)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            final_loss += loss.item()
+            final_loss += loss.item() / len(inputs)
         
         scheduler.step()
 
@@ -97,7 +93,7 @@ def train_fn(model, optimizer, scheduler, loss_fn, dataloader, device):
     return final_loss
 
 
-def valid_fn(model, loss_fn, dataloader, device):
+def valid_fn(model, loss_fn, dataloader, device, variational):
 
     model.eval()
     final_loss = 0
@@ -108,77 +104,146 @@ def valid_fn(model, loss_fn, dataloader, device):
 
         for img in inputs:
             img = img.to(device)
-            outputs = model(img)
-            loss = loss_fn(outputs, targets)
+            if variational:
+                y_pred, mu, lnvar = model(img)
+                loss = loss_fn(y_pred, targets, mu, lnvar, R_LOSS_FACTOR)
+            else:
+                y_pred = model(img)
+                loss = loss_fn(y_pred, targets)
 
-            final_loss += loss.item()
+            final_loss += loss.item() / len(inputs)
 
     final_loss /= len(dataloader)
 
     return final_loss
 
 
-def inference_and_save(model, path_dict, device, save_path):
+def inference_and_save(model, file_name=None, device="cpu", save_path=None, crop=True, variational=False, epoch=0):
 
     model.eval()
 
-    for k in ["spring", "summer", "autumn", "winter"]:
-        img_path = path_dict[k]
-        img = get_img(img_path)
-        img = transforms.ToTensor()(img)
+    if file_name is None:
+        return
+
+    if save_path is None:
+        save_path = BASE_PATH + "tmp"
+
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+
+    epoch_path = save_path + "/epoch_" + str(epoch)
+    if not os.path.exists(epoch_path):
+        os.mkdir(epoch_path)
+    
+    styles = SEASON + ["normal"]
+    for s in styles:
+        img_path = BASE_PATH + s + "/images/" + file_name
+        img = get_img(img_path, crop)
+        img = transforms.ToTensor()(img.copy())
         img = img.unsqueeze(0)
         img = img.to(device)
         
-        outputs = model(img).detach().cpu().squeeze().numpy()
+        if variational:
+            outputs, _, _ = model(img)
+            outputs = outputs.detach().cpu().squeeze().numpy()
+        else:
+            outputs = model(img).detach().cpu().squeeze().numpy()
+        
+        outputs = 255*outputs.transpose((1, 2, 0))
 
         im_bgr = cv2.cvtColor(outputs, cv2.COLOR_RGB2BGR)
-        path = save_path + "/" + img_path.split('.')[0] + "_pred_" + k + ".jpg"
+        path = epoch_path + "/" + file_name.split('.')[0] + "_pred_" + s + ".jpg"
         cv2.imwrite(path, im_bgr)
 
-    img_path = path_dict["normal"]
-    path = save_path + "/" + img_path
-    original = get_img(img_path)
+    img_path = BASE_PATH + "normal/images/" + file_name
+    path = epoch_path + "/" + file_name
+    original = get_img(img_path, crop)
     im_bgr = cv2.cvtColor(original, cv2.COLOR_RGB2BGR)
     cv2.imwrite(path, im_bgr)
 
 
-def run_training(seed, train_dict, valid_dict):
+def run_training(seed, train_path, valid_path, variational=False):
     
     seed_everything(seed)
     
-    train_dataset = AEDataSet(train_dict, transdorm=transforms.ToTensor())
-    valid_dataset = AEDataSet(valid_dict, transdorm=transforms.ToTensor())
+    train_dataset = AEDataSet(train_path, transdorm=transforms.ToTensor(), crop=IMG_CROP)
+    valid_dataset = AEDataSet(valid_path, transdorm=transforms.ToTensor(), crop=IMG_CROP)
+
     trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     validloader = torch.utils.data.DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False)
     
-    model = Autoencoder(h=120, w=320, outputs=64)
+    if variational:
+        model = VAE(h=120, w=320, outputs=NUM_Z)
+        loss_fn = VAELoss()
+        model_path = "vae.pth"
+    else:
+        model = Autoencoder(h=120, w=320, outputs=NUM_Z)
+        loss_fn = nn.MSELoss()
+        model_path = "ae.pth"
     
     model.to(DEVICE)
     
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     scheduler = optim.lr_scheduler.OneCycleLR(optimizer=optimizer, pct_start=0.1, div_factor=1e3, 
                                               max_lr=1e-2, epochs=EPOCHS, steps_per_epoch=len(trainloader))
-    
-    loss_fn = nn.MSELoss()
         
     best_loss = np.inf
     
     for epoch in range(EPOCHS):
         
-        train_loss = train_fn(model, optimizer, scheduler, loss_fn, trainloader, DEVICE)
-        valid_loss = valid_fn(model, loss_fn, validloader, DEVICE)
-        print(f"EPOCH: {epoch}, train_loss: {train_loss}, valid_loss: {valid_loss}")
+        train_loss = train_fn(model, optimizer, scheduler, loss_fn, trainloader, DEVICE, variational)
+        valid_loss = valid_fn(model, loss_fn, validloader, DEVICE, variational)
+        print("EPOCH: {}, train_loss: {}, valid_loss: {}".format(epoch, train_loss, valid_loss))
         
         if valid_loss < best_loss:
             
             best_loss = valid_loss
-            torch.save(model.state_dict(), "autoencoder.pth")
+            torch.save(model.state_dict(), model_path)
+
+        # inference test data
+        if epoch % INF_INTERVAL == 0:
+            inference_path = random.sample(valid_path, 5)
+            for path in inference_path:
+                inference_and_save(model, path, DEVICE, SAVE_PATH, IMG_CROP, variational, epoch)
+
+
+def main():
+    # image file paths
+    img_file_path = glob.glob(BASE_PATH + "normal/images/*.jpg")
+    img_file_path = [path.split("/")[-1] for path in img_file_path]
+
+    # split train and valid
+    random.shuffle(img_file_path)               # shuffle path list
+    train_num = int(0.8 * len(img_file_path))   # number of train data
+    train_path = img_file_path[:train_num]      # paths of train data
+    valid_path = img_file_path[train_num:]      # paths of valid data
+    
+    print("train size: {}".format(len(train_path)))
+    print("valid size: {}".format(len(valid_path)))
+
+    # run training
+    run_training(SEED, train_path, valid_path, VARIATIONAL)
 
 
 if __name__ == "__main__":
-
+    
+    # config
+    BASE_PATH = "/home/jetson/"
+    SAVE_PATH = BASE_PATH + "test_ae"
+    SEASON = ["spring", "summer", "autumn", "winter"]
     DEVICE = ('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    # parameter
+    NUM_Z = 128
+    R_LOSS_FACTOR = 1
     BATCH_SIZE = 32
     LEARNING_RATE = 1e-5
     WEIGHT_DECAY = 1e-5
-    EPOCHS = 25
+    EPOCHS = 50
+    SEED = 42
+    INF_INTERVAL = 2
+    IMG_CROP = True
+    VARIATIONAL = False
+    
+    # main function
+    main()
