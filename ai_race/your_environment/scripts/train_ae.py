@@ -163,7 +163,11 @@ def inference_and_save(model, file_name=None, device="cpu", save_path=None, crop
 
 
 def run_training(seed, train_path, valid_path, variational=False):
-    
+
+    save_path = "models/"
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+
     seed_everything(seed)
     
     train_dataset = AEDataSet(train_path, transdorm=transforms.ToTensor(), crop=IMG_CROP)
@@ -188,7 +192,7 @@ def run_training(seed, train_path, valid_path, variational=False):
                                               max_lr=1e-2, epochs=EPOCHS, steps_per_epoch=len(trainloader))
         
     best_loss = np.inf
-    best_model_path = model_name + "_best.pth"
+    best_model_path = save_path + model_name + "_best.pth"
 
     for epoch in range(EPOCHS):
         
@@ -202,7 +206,7 @@ def run_training(seed, train_path, valid_path, variational=False):
             torch.save(model.state_dict(), best_model_path)
         
         if epoch % 5 == 4:
-            model_path = model_name + "_ckpt_{}.pth".format(epoch + 1)
+            model_path = save_path + model_name + "_ckpt_{}.pth".format(epoch + 1)
             torch.save(model.state_dict(), model_path)
 
         # inference test data
@@ -242,7 +246,7 @@ if __name__ == "__main__":
     NUM_Z = 128
     BATCH_SIZE = 32
     LEARNING_RATE = 1e-5
-    WEIGHT_DECAY = 1e0
+    WEIGHT_DECAY = 1e1
     EPOCHS = 25
     SEED = 42
     INF_INTERVAL = 1
