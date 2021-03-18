@@ -75,7 +75,7 @@ def train_fn(model, optimizer, scheduler, loss_fn, dataloader, device, variation
             img = img.to(device)
             if variational:
                 y_pred, mu, lnvar = model(img)
-                loss = loss_fn(y_pred, targets, mu, lnvar, R_LOSS_FACTOR)
+                loss = loss_fn(y_pred, targets, mu, lnvar)
             else:
                 y_pred = model(img)
                 loss = loss_fn(y_pred, targets)
@@ -106,7 +106,7 @@ def valid_fn(model, loss_fn, dataloader, device, variational):
             img = img.to(device)
             if variational:
                 y_pred, mu, lnvar = model(img)
-                loss = loss_fn(y_pred, targets, mu, lnvar, R_LOSS_FACTOR)
+                loss = loss_fn(y_pred, targets, mu, lnvar)
             else:
                 y_pred = model(img)
                 loss = loss_fn(y_pred, targets)
@@ -175,11 +175,11 @@ def run_training(seed, train_path, valid_path, variational=False):
     if variational:
         model = VAE(h=120, w=320, outputs=NUM_Z)
         loss_fn = VAELoss()
-        model_path = "vae.pth"
+        model_name = "vae"
     else:
         model = Autoencoder(h=120, w=320, outputs=NUM_Z)
-        loss_fn = nn.MSELoss()
-        model_path = "ae.pth"
+        loss_fn = nn.BCELoss()
+        model_name = "ae"
     
     model.to(DEVICE)
     
@@ -188,7 +188,8 @@ def run_training(seed, train_path, valid_path, variational=False):
                                               max_lr=1e-2, epochs=EPOCHS, steps_per_epoch=len(trainloader))
         
     best_loss = np.inf
-    
+    best_model_path = model_name + "_best.pth"
+
     for epoch in range(EPOCHS):
         
         train_loss = train_fn(model, optimizer, scheduler, loss_fn, trainloader, DEVICE, variational)
@@ -198,11 +199,15 @@ def run_training(seed, train_path, valid_path, variational=False):
         if valid_loss < best_loss:
             
             best_loss = valid_loss
+            torch.save(model.state_dict(), best_model_path)
+        
+        if epoch % 5 == 4:
+            model_path = model_name + "_ckpt_{}.pth".format(epoch + 1)
             torch.save(model.state_dict(), model_path)
 
         # inference test data
         if epoch % INF_INTERVAL == 0:
-            inference_path = random.sample(valid_path, 5)
+            inference_path = random.sample(valid_path, INF_NUM)
             for path in inference_path:
                 inference_and_save(model, path, DEVICE, SAVE_PATH, IMG_CROP, variational, epoch)
 
@@ -229,21 +234,21 @@ if __name__ == "__main__":
     
     # config
     BASE_PATH = "/home/jetson/"
-    SAVE_PATH = BASE_PATH + "test_ae"
+    SAVE_PATH = BASE_PATH + "test_vae"
     SEASON = ["spring", "summer", "autumn", "winter"]
     DEVICE = ('cuda' if torch.cuda.is_available() else 'cpu')
     
     # parameter
     NUM_Z = 128
-    R_LOSS_FACTOR = 1
     BATCH_SIZE = 32
     LEARNING_RATE = 1e-5
-    WEIGHT_DECAY = 1e-5
-    EPOCHS = 50
+    WEIGHT_DECAY = 1e0
+    EPOCHS = 25
     SEED = 42
-    INF_INTERVAL = 2
+    INF_INTERVAL = 1
+    INF_NUM = 10
     IMG_CROP = True
-    VARIATIONAL = False
+    VARIATIONAL = True
     
     # main function
     main()

@@ -122,12 +122,10 @@ class VAELoss(nn.Module):
     def __init__(self):
         super(VAELoss, self).__init__()
 
-        self.recon = nn.MSELoss()
-
-    def forward(self, y_pred, y_true, mu, lnvar, weight):
-        mse = self.recon(y_pred, y_true)
+    def forward(self, y_pred, y_true, mu, lnvar):
+        bce = F.binary_cross_entropy(y_pred, y_true, reduction="sum")
         kl = -0.5 * torch.sum(1 + lnvar - mu.pow(2) - lnvar.exp())
-        return weight * mse + kl
+        return bce + kl
 
 
 if __name__ == "__main__":
