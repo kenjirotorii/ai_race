@@ -162,24 +162,24 @@ def parse_args():
     arg_parser = argparse.ArgumentParser(description="Image Classification")
 
     arg_parser.add_argument("--dataset_name", type=str, default='sim_race')
-	arg_parser.add_argument("--data_csv", type=str, default=home+'/Images_from_rosbag/_2020-11-05-01-45-29_2/_2020-11-05-01-45-29.csv')
-	arg_parser.add_argument("--model_name", type=str, default='control_model')
-	arg_parser.add_argument("--model_path", type=str, default=cwd+'/models/')
+    arg_parser.add_argument("--data_csv", type=str, default=home+'/Images_from_rosbag/_2020-11-05-01-45-29_2/_2020-11-05-01-45-29.csv')
+    arg_parser.add_argument("--model_name", type=str, default='control_model')
+    arg_parser.add_argument("--model_path", type=str, default=cwd+'/models/')
     arg_parser.add_argument("--pretrained_model", type=str, default=cwd+'/models/vae_best.pth')
-	arg_parser.add_argument('--batch_size', default=32, type=int, help='batch size')
+    arg_parser.add_argument('--batch_size', default=32, type=int, help='batch size')
     arg_parser.add_argument('--n_epoch', default=20, type=int, help='The number of epoch')
-	arg_parser.add_argument('--lr', default=1e-5, type=float, help='Learning rate')
-	arg_parser.add_argument('--wd', default=1e-5, type=float, help='Weight decay')
-	arg_parser.add_argument('--save_model_interval', default=5, type=int, help='save model interval')
-
-	args = arg_parser.parse_args()
+    arg_parser.add_argument('--lr', default=1e-5, type=float, help='Learning rate')
+    arg_parser.add_argument('--wd', default=1e-5, type=float, help='Weight decay')
+    arg_parser.add_argument('--save_model_interval', default=5, type=int, help='save model interval')
+    
+    args = arg_parser.parse_args()
 
     # Make directory.
-	os.makedirs(args.model_path, exist_ok=True)
+    os.makedirs(args.model_path, exist_ok=True)
 
     # Validate paths.
-	assert os.path.exists(args.data_csv)
-	assert os.path.exists(args.model_path)
+    assert os.path.exists(args.data_csv)
+    assert os.path.exists(args.model_path)
 
     return args
 
