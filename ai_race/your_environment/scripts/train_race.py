@@ -2,6 +2,7 @@
 Train vechile control with camera images
 '''
 import os
+import glob
 import argparse
 
 import torch
@@ -16,6 +17,7 @@ from sklearn.metrics import f1_score
 
 from autoencoder import VAE, ControlHead
 from utils import seed_everything
+from train_funcs import train_fn, valid_fn
 from make_datasets import ControlDataSet
 
 
@@ -27,13 +29,13 @@ def run_training(seed, train_df, valid_df, device, args):
 
     seed_everything(seed)
     
-    train_dataset = ControlDataSet(train_df, transdorm=transforms.ToTensor(), crop=True)
-    valid_dataset = ControlDataSet(valid_df, transdorm=transforms.ToTensor(), crop=True)
+    train_dataset = ControlDataSet(train_df, transform=transforms.ToTensor(), crop=True)
+    valid_dataset = ControlDataSet(valid_df, transform=transforms.ToTensor(), crop=True)
 
     trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     validloader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
 
-    model = VAE(h=120, w=320, outputs=args.num_z)
+    model = VAE(h=120, w=320, outputs=args.num_z, train_mode=False)
     model.load_state_dict(torch.load(args.pretrained_model))
 
     for name, param in model.named_parameters():
@@ -72,11 +74,10 @@ def parse_args():
 
     arg_parser = argparse.ArgumentParser(description="Image Classification")
 
-    arg_parser.add_argument("--dataset_name", type=str, default='sim_race')
-    arg_parser.add_argument("--data_csv", type=str, default=HOME_PATH+'/Images_from_rosbag/_2020-11-05-01-45-29_2/_2020-11-05-01-45-29.csv')
+    arg_parser.add_argument("--data_path", type=str, default=HOME_PATH+'/Images_from_rosbag/')
     arg_parser.add_argument("--model_name", type=str, default='control_model')
     arg_parser.add_argument("--model_path", type=str, default=CWD_PATH+'/models/')
-    arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/vae_best.pth')
+    arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/vae_ckpt_25.pth')
     arg_parser.add_argument('--batch_size', default=32, type=int, help='batch size')
     arg_parser.add_argument('--num_z', default=128, type=int, help='The number of latent variables')
     arg_parser.add_argument('--n_epoch', default=25, type=int, help='The number of epoch')
@@ -91,7 +92,7 @@ def parse_args():
         os.mkdir(args.model_path)
 
     # Validate paths.
-    assert os.path.exists(args.data_csv)
+    assert os.path.exists(args.data_path)
     assert os.path.exists(args.model_path)
 
     return args
@@ -106,7 +107,12 @@ def main():
     seed = 42
 
     # Load image data
-    image_df = pd.read_csv(args.data_csv, engine='python', header=None)
+    csv_paths = glob.glob(args.data_path + "*/*.csv")
+    image_df = pd.DataFrame()
+    for path in csv_paths:
+        _df = pd.read_csv(path, engine='python', header=None)
+        image_df = pd.concat([image_df, _df])
+    image_df.index = range(len(image_df))
     image_df = image_df.reindex(np.random.permutation(image_df.index))
     num_valid = int(len(image_df) * 0.2)
     train_df = image_df[num_valid:]
@@ -114,6 +120,9 @@ def main():
 
     print("train size: {}".format(len(train_df)))
     print("valid size: {}".format(len(valid_df)))
+
+    print(train_df.iat[0, 1])
+    print(valid_df.iat[0, 2])
 	
     # run training
     run_training(seed, train_df, valid_df, device, args)

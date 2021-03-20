@@ -86,9 +86,10 @@ class Autoencoder(nn.Module):
 
 
 class VAE(nn.Module):
-    def __init__(self, h, w, outputs):
+    def __init__(self, h, w, outputs, train_mode=True):
         super(VAE, self).__init__()
-
+        
+        self.train_mode = train_mode
         self.encoder = Encoder(h, w, outputs, True)
         self.decoder = Decoder(outputs, h, w)
     
@@ -101,7 +102,10 @@ class VAE(nn.Module):
         mu, lnvar = self.encoder(x)
         x = self.reparameterize(mu, lnvar)
         x = self.decoder(x)
-        return x, mu, lnvar
+        if self.train_mode:
+            return x, mu, lnvar
+        else:
+            return x
 
 
 class ControlHead(nn.Module):
