@@ -73,11 +73,9 @@ def run_training(seed, train_path, valid_path, device, args):
     if args.variational:
         model = VAE(h=120, w=320, outputs=args.num_z)
         loss_fn = VAELoss()
-        model_name = "vae"
     else:
         model = Autoencoder(h=120, w=320, outputs=args.num_z)
         loss_fn = nn.BCELoss()
-        model_name = "ae"
     
     model.to(device)
     
@@ -114,7 +112,7 @@ def parse_args():
 
     arg_parser = argparse.ArgumentParser(description="Autoencoder")
 
-    arg_parser.add_argument("--model_name", type=str, default='control_model')
+    arg_parser.add_argument("--model_name", type=str, default='vae')
     arg_parser.add_argument("--model_path", type=str, default=CWD_PATH+'/models/')
     arg_parser.add_argument("--variational", action='store_true')
     arg_parser.add_argument("--result_path", type=str, default=HOME_PATH+'/test_vae/')
