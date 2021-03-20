@@ -186,18 +186,18 @@ def parse_args():
 
 def main():
     # Parse arguments.
-	args = parse_args()
+    args = parse_args()
 	# Set device.
-	device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # Set seed.
     seed = 42
 
     # Load image data
     image_df = pd.read_csv(args.data_csv, engine='python', header=None)
-	image_df = image_df.reindex(np.random.permutation(image_df.index))
-	num_valid = int(len(image_df) * 0.2)
-	train_df = image_df[num_valid:]
-	valid_df = image_df[:num_valid]
+    image_df = image_df.reindex(np.random.permutation(image_df.index))
+    num_valid = int(len(image_df) * 0.2)
+    train_df = image_df[num_valid:]
+    valid_df = image_df[:num_valid]
 
     print("train size: {}".format(len(train_df)))
     print("valid size: {}".format(len(valid_df)))
@@ -207,6 +207,6 @@ def main():
 
 
 if __name__ == "__main__":
-	main()
+    main()
     print("finished successfully.")
-	os._exit(0)
+    os._exit(0)
