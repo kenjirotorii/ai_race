@@ -1,6 +1,7 @@
 '''
 Train functions.
 '''
+from utils import calc_score
 
 def train_ae(model, optimizer, scheduler, loss_fn, dataloader, device, variational):
 
@@ -62,6 +63,8 @@ def train_fn(model, optimizer, scheduler, loss_fn, dataloader, device):
 
     model.train()
     final_loss = 0
+    output_list = []
+    target_list = []
 
     for _, (inputs, targets) in enumerate(dataloader):
         
@@ -76,18 +79,22 @@ def train_fn(model, optimizer, scheduler, loss_fn, dataloader, device):
         optimizer.step()
 
         final_loss += loss.item()
+        output_list += [int(y.argmax()) for y in y_pred]
+        target_list += [int(t) for t in targets]
         
         scheduler.step()
 
-    final_loss /= len(dataloader)
+    train_acc, train_loss = calc_score(output_list, target_list, final_loss, dataloader)
 
-    return final_loss
+    return train_acc, train_loss
 
 
 def valid_fn(model, loss_fn, dataloader, device):
 
     model.eval()
     final_loss = 0
+    output_list = []
+    target_list = []
     
     for _, (inputs, targets) in enumerate(dataloader):
         
@@ -98,7 +105,9 @@ def valid_fn(model, loss_fn, dataloader, device):
         loss = loss_fn(y_pred, targets)
 
         final_loss += loss.item()
+        output_list += [int(y.argmax()) for y in y_pred]
+        target_list += [int(t) for t in targets]
 
-    final_loss /= len(dataloader)
+    valid_acc, valid_loss = calc_score(output_list, target_list, final_loss, dataloader)
 
-    return final_loss
+    return valid_acc, valid_loss

@@ -4,7 +4,7 @@ import random
 import cv2
 import numpy as np
 import torch
-
+from sklearn.metrics import f1_score
 
 def seed_everything(seed=42):
     random.seed(seed)
@@ -24,3 +24,10 @@ def get_img(path, crop=True):
         im_rgb = im_rgb[int(h/2):, :, :]
         
     return im_rgb
+
+
+def calc_score(output_list, target_list, running_loss, data_loader):
+    # Calculate accuracy.
+    acc = round(f1_score(output_list, target_list, average='micro'), 6)
+    loss = round(running_loss / len(data_loader.dataset), 6)
+    return acc, loss

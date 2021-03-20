@@ -12,8 +12,6 @@ import torchvision.transforms as transforms
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import classification_report
-from sklearn.metrics import f1_score
 
 from autoencoder import VAE, ControlHead
 from utils import seed_everything
@@ -56,9 +54,9 @@ def run_training(seed, train_df, valid_df, device, args):
 
     for epoch in range(args.n_epoch):
         
-        train_loss = train_fn(model, optimizer, scheduler, loss_fn, trainloader, device)
-        valid_loss = valid_fn(model, loss_fn, validloader, device)
-        print("EPOCH: {}, train_loss: {}, valid_loss: {}".format(epoch, train_loss, valid_loss))
+        train_acc, train_loss = train_fn(model, optimizer, scheduler, loss_fn, trainloader, device)
+        valid_acc, valid_loss = valid_fn(model, loss_fn, validloader, device)
+        print("EPOCH: {}, train_loss: {:.6f}, valid_loss: {:.6f}, train_acc:{}, valid_acc:{}".format(epoch, train_loss, valid_loss, train_acc, valid_acc))
         
         if valid_loss < best_loss:
             
