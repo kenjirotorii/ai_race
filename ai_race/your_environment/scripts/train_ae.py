@@ -21,6 +21,7 @@ from train_funcs import train_ae, valid_ae
 HOME_PATH = os.environ['HOME']
 CWD_PATH = os.path.dirname(os.path.abspath(__file__))
 
+
 def inference_and_save(model, args, file_name=None, device="cpu", variational=True, epoch=0):
 
     model.eval()
@@ -58,7 +59,7 @@ def inference_and_save(model, args, file_name=None, device="cpu", variational=Tr
     cv2.imwrite(path, im_bgr)
 
 
-def run_training(seed, train_path, valid_path, variational, device, args):
+def run_training(seed, train_path, valid_path, device, args):
 
     seed_everything(seed)
     
@@ -68,7 +69,7 @@ def run_training(seed, train_path, valid_path, variational, device, args):
     trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     validloader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
     
-    if variational:
+    if args.variational:
         model = VAE(h=120, w=320, outputs=args.num_z)
         loss_fn = VAELoss()
         model_name = "vae"
@@ -88,8 +89,8 @@ def run_training(seed, train_path, valid_path, variational, device, args):
 
     for epoch in range(args.n_epoch):
         
-        train_loss = train_ae(model, optimizer, scheduler, loss_fn, trainloader, device, variational)
-        valid_loss = valid_ae(model, loss_fn, validloader, device, variational)
+        train_loss = train_ae(model, optimizer, scheduler, loss_fn, trainloader, device, args.variational)
+        valid_loss = valid_ae(model, loss_fn, validloader, device, args.variational)
         print("EPOCH: {}, train_loss: {}, valid_loss: {}".format(epoch, train_loss, valid_loss))
         
         if valid_loss < best_loss:
@@ -105,7 +106,7 @@ def run_training(seed, train_path, valid_path, variational, device, args):
         if epoch % args.inf_model_interval == 0:
             inference_path = random.sample(valid_path, args.num_inf)
             for path in inference_path:
-                inference_and_save(model, args, path, device, variational, epoch)
+                inference_and_save(model, args, path, device, args.variational, epoch)
 
 
 def parse_args():
@@ -114,6 +115,7 @@ def parse_args():
 
     arg_parser.add_argument("--model_name", type=str, default='control_model')
     arg_parser.add_argument("--model_path", type=str, default=CWD_PATH+'/models/')
+    arg_parser.add_argument("--variational", action='store_true')
     arg_parser.add_argument("--result_path", type=str, default=HOME_PATH+'/test_vae/')
     arg_parser.add_argument('--batch_size', default=32, type=int, help='batch size')
     arg_parser.add_argument('--num_z', default=128, type=int, help='The number of latent variables')
@@ -127,8 +129,10 @@ def parse_args():
     args = arg_parser.parse_args()
 
     # Make directory.
-    os.makedirs(args.model_path, exist_ok=True)
-    os.makedirs(args.result_path, exist_ok=True)
+    if not os.path.exists(args.model_path):
+        os.mkdir(args.model_path)
+    if not os.path.exists(args.result_path):
+        os.mkdir(args.result_path)
 
     # Validate paths.
     assert os.path.exists(args.model_path)

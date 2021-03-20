@@ -87,7 +87,8 @@ def parse_args():
     args = arg_parser.parse_args()
 
     # Make directory.
-    os.makedirs(args.model_path, exist_ok=True)
+    if not os.path.exists(args.model_path):
+        os.mkdir(args.model_path)
 
     # Validate paths.
     assert os.path.exists(args.data_csv)
