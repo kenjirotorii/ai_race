@@ -43,7 +43,7 @@ def run_training(seed, train_df, valid_df, device, args):
 
     model.decoder = ControlHead(args.num_z, 3)
     model.to(device)
-
+    
     loss_fn = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
     scheduler = optim.lr_scheduler.OneCycleLR(optimizer=optimizer, pct_start=0.1, div_factor=1e3, 
@@ -118,9 +118,6 @@ def main():
 
     print("train size: {}".format(len(train_df)))
     print("valid size: {}".format(len(valid_df)))
-
-    print(train_df.iat[0, 1])
-    print(valid_df.iat[0, 2])
 	
     # run training
     run_training(seed, train_df, valid_df, device, args)

@@ -122,6 +122,25 @@ class ControlHead(nn.Module):
         return x
 
 
+class ControlNet(nn.Module):
+    def __init__(self, h, w, z, outputs, variational=True):
+        super(ControlNet, self).__init__()
+
+        self.encoder = Encoder(h, w, z, variational)
+        self.decoder = ControlHead(z, outputs)
+
+    def reparameterize(self, mu, lnvar):
+        std = torch.exp(0.5*lnvar)
+        eps = torch.randn_like(std)
+        return mu + eps*std
+
+    def forward(self, x):
+        mu, lnvar = self.encoder(x)
+        x = self.reparameterize(mu, lnvar)
+        x = self.decoder(x)
+        return x
+
+
 class VAELoss(nn.Module):
     def __init__(self):
         super(VAELoss, self).__init__()
