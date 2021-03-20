@@ -49,6 +49,7 @@ class ControlNet(nn.Module):
         linear_input_size = convw * convh * 32
 
         self.dense = nn.Linear(linear_input_size, 256)
+        self.bn4 = nn.BatchNorm1d(256)
         self.head = nn.Linear(64, outputs)
 
     def forward(self, x, m):
@@ -56,7 +57,7 @@ class ControlNet(nn.Module):
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
         x = x.view(x.size(0), -1)
-        x = self.dense(x)
+        x = F.relu(self.bn4(self.dense(x)))
         
         x = x.view(-1, 4, 64)
         m = m.view(-1, 1, 4)
