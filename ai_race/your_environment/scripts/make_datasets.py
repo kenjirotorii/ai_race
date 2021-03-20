@@ -2,6 +2,7 @@ from torch.utils.data import Dataset
 
 from utils import get_img
 
+
 class AEDataSet(Dataset):
     def __init__(self, home_path, path_list, transform=None, crop=True):
         """DataSet for Autoencoder
@@ -22,9 +23,9 @@ class AEDataSet(Dataset):
         return len(self.path_list)
 
     def __getitem__(self, idx):
-        input_paths = [self.home_path + s + "/images/" + self.path_list[idx] for s in self.seasons]
+        input_paths = ["{}/{}/images/{}".format(self.home_path, s, self.path_list[idx]) for s in self.seasons]
         inputs = [get_img(path, self.crop) for path in input_paths]
-        target_path = self.home_path + "normal/images/" + self.path_list[idx]
+        target_path = self.home_path + "/normal/images/" + self.path_list[idx]
         target = get_img(target_path, self.crop)
         
         if self.transform:

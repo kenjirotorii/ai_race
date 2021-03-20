@@ -16,6 +16,7 @@ import torchvision.transforms as transforms
 from autoencoder import Autoencoder, VAE, VAELoss
 from utils import get_img, seed_everything
 from train_funcs import train_ae, valid_ae
+from make_datasets import AEDataSet
 
 
 HOME_PATH = os.environ['HOME']
@@ -63,8 +64,8 @@ def run_training(seed, train_path, valid_path, device, args):
 
     seed_everything(seed)
     
-    train_dataset = AEDataSet(train_path, transdorm=transforms.ToTensor(), crop=True)
-    valid_dataset = AEDataSet(valid_path, transdorm=transforms.ToTensor(), crop=True)
+    train_dataset = AEDataSet(HOME_PATH, train_path, transform=transforms.ToTensor(), crop=True)
+    valid_dataset = AEDataSet(HOME_PATH, valid_path, transform=transforms.ToTensor(), crop=True)
 
     trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     validloader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
@@ -82,7 +83,7 @@ def run_training(seed, train_path, valid_path, device, args):
     
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
     scheduler = optim.lr_scheduler.OneCycleLR(optimizer=optimizer, pct_start=0.1, div_factor=1e3, 
-                                              max_lr=1e-2, epochs=args.n_epochs, steps_per_epoch=len(trainloader))
+                                              max_lr=1e-2, epochs=args.n_epoch, steps_per_epoch=len(trainloader))
         
     best_loss = np.inf
     best_model_path = args.model_path + args.model_name + "_best.pth"
