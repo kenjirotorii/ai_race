@@ -71,10 +71,10 @@ def run_training(seed, train_path, valid_path, device, args):
     validloader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
     
     if args.variational:
-        model = VAE(h=120, w=320, outputs=args.num_z)
+        model = VAE(h=80, w=160, outputs=args.num_z)
         loss_fn = VAELoss()
     else:
-        model = Autoencoder(h=120, w=320, outputs=args.num_z)
+        model = Autoencoder(h=80, w=160, outputs=args.num_z)
         loss_fn = nn.BCELoss()
     
     model.to(device)

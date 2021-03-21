@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def conv2d_size_out(size, kernel_size=5, stride=2):
+def conv2d_size_out(size, kernel_size=4, stride=2):
     return (size - (kernel_size - 1) - 1) // stride  + 1
 
 
@@ -12,16 +12,18 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         self.variational = variational
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(16)
-        self.conv2 = nn.Conv2d(16, 16, kernel_size=5, stride=2)
-        self.bn2 = nn.BatchNorm2d(16)
-        self.conv3 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(32)
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=4, stride=2)
+        self.bn1 = nn.BatchNorm2d(32)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=4, stride=2)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=4, stride=2)
+        self.bn4 = nn.BatchNorm2d(256)
 
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
-        linear_input_size = convw * convh * 32
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(h))))
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(w))))
+        linear_input_size = convw * convh * 256
 
         if self.variational:
             self.mu_head = nn.Linear(linear_input_size, outputs)
@@ -33,6 +35,7 @@ class Encoder(nn.Module):
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn4(self.conv4(x)))
         x = x.view(x.size(0), -1)
         if self.variational:
             mu = self.mu_head(x)
@@ -47,28 +50,32 @@ class Decoder(nn.Module):
     def __init__(self, inputs, h, w):
         super(Decoder, self).__init__()
 
-        self.convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h, 4), 4), 4)
-        self.convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w, 4), 4), 4)
-        linear_input_size = self.convw * self.convh * 32
+        self.convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(h))))
+        self.convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(w))))
+        linear_input_size = self.convw * self.convh * 256
         
         self.dense = nn.Linear(inputs, linear_input_size)
-        self.conv1 = nn.ConvTranspose2d(in_channels=32, out_channels=16,
+        self.conv1 = nn.ConvTranspose2d(in_channels=256, out_channels=128,
                                         kernel_size=4, stride=2)
-        self.bn1 = nn.BatchNorm2d(16)
-        self.conv2 = nn.ConvTranspose2d(in_channels=16, out_channels=16,
-                                        kernel_size=4, stride=2, output_padding=1)
-        self.bn2 = nn.BatchNorm2d(16)             
-        self.conv3 = nn.ConvTranspose2d(in_channels=16, out_channels=3,
+        self.bn1 = nn.BatchNorm2d(128)
+        self.conv2 = nn.ConvTranspose2d(in_channels=128, out_channels=64,
+                                        kernel_size=4, stride=2)
+        self.bn2 = nn.BatchNorm2d(64)             
+        self.conv3 = nn.ConvTranspose2d(in_channels=64, out_channels=32,
+                                        kernel_size=5, stride=2)
+        self.bn3 = nn.BatchNorm2d(32)
+        self.conv4 = nn.ConvTranspose2d(in_channels=32, out_channels=3,
                                         kernel_size=4, stride=2)
 
         self.sigmoid = nn.Sigmoid()
                                 
     def forward(self, x):
         x = self.dense(x)
-        x = x.view(x.size(0), 32, self.convh, self.convw)
+        x = x.view(x.size(0), 256, self.convh, self.convw)
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
-        x = self.sigmoid(self.conv3(x))
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = self.sigmoid(self.conv4(x))
         return x
 
 
@@ -112,9 +119,9 @@ class ControlHead(nn.Module):
     def __init__(self, inputs, outputs):
         super(ControlHead, self).__init__()
 
-        self.dense = nn.Linear(inputs, 32)
-        self.bn = nn.BatchNorm1d(32)
-        self.head = nn.Linear(32, outputs)
+        self.dense = nn.Linear(inputs, 64)
+        self.bn = nn.BatchNorm1d(64)
+        self.head = nn.Linear(64, outputs)
 
     def forward(self, x):
         x = F.relu(self.bn(self.dense(x)))
@@ -146,17 +153,20 @@ class VAELoss(nn.Module):
         super(VAELoss, self).__init__()
 
     def forward(self, y_pred, y_true, mu, lnvar):
-        bce = F.binary_cross_entropy(y_pred, y_true, reduction="sum")
+        bs = y_pred.size(0)
+        # rl = F.binary_cross_entropy(y_pred, y_true, reduction="sum")
+        rl = F.mse_loss(y_pred, y_true, reduction="sum")
         kl = -0.5 * torch.sum(1 + lnvar - mu.pow(2) - lnvar.exp())
-        return bce + kl
+        loss = rl + kl
+        return loss / bs
 
 
 if __name__ == "__main__":
 
-    h = 120
-    w = 320
+    h = 80
+    w = 160
     img = torch.rand(2, 3, h, w)
-    z = 64
+    z = 512
     variational = True
 
     if variational:
@@ -200,5 +210,5 @@ if __name__ == "__main__":
 
         print(y.size())
     
-    # example(mod, img)
-    transfer(mod, img)
+    example(mod, img)
+    # transfer(mod, img)

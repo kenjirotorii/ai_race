@@ -33,7 +33,7 @@ def run_training(seed, train_df, valid_df, device, args):
     trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     validloader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
 
-    model = VAE(h=120, w=320, outputs=args.num_z, train_mode=False)
+    model = VAE(h=80, w=160, outputs=args.num_z, train_mode=False)
     model.load_state_dict(torch.load(args.pretrained_model))
 
     for name, param in model.named_parameters():

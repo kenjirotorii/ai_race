@@ -22,6 +22,7 @@ def get_img(path, crop=True):
     if crop:
         h = im_rgb.shape[0]
         im_rgb = im_rgb[int(h/2):, :, :]
+        im_rgb = cv2.resize(im_rgb, (160, 80))
         
     return im_rgb
 
