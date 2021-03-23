@@ -132,7 +132,8 @@ class ControlHead(nn.Module):
 class ControlNet(nn.Module):
     def __init__(self, h, w, z, outputs, variational=True):
         super(ControlNet, self).__init__()
-
+        
+        self.variational = variational
         self.encoder = Encoder(h, w, z, variational)
         self.decoder = ControlHead(z, outputs)
 
@@ -142,8 +143,11 @@ class ControlNet(nn.Module):
         return mu + eps*std
 
     def forward(self, x):
-        mu, lnvar = self.encoder(x)
-        x = self.reparameterize(mu, lnvar)
+        if self.variational:
+            mu, lnvar = self.encoder(x)
+            x = self.reparameterize(mu, lnvar)
+        else:
+            x = self.encoder(x)
         x = self.decoder(x)
         return x
 

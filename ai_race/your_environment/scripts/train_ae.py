@@ -49,15 +49,13 @@ def inference_and_save(model, args, file_name=None, device="cpu", variational=Tr
         
         outputs = 255*outputs.transpose((1, 2, 0))
 
-        im_bgr = cv2.cvtColor(outputs, cv2.COLOR_RGB2BGR)
         path = "{}/{}_pred_{}.jpg".format(epoch_path, file_name.split('.')[0], s)
-        cv2.imwrite(path, im_bgr)
+        cv2.imwrite(path, outputs)
 
     img_path = "{}/normal/images/{}".format(HOME_PATH, file_name)
     path = epoch_path + "/" + file_name
     original = get_img(img_path, crop=True)
-    im_bgr = cv2.cvtColor(original, cv2.COLOR_RGB2BGR)
-    cv2.imwrite(path, im_bgr)
+    cv2.imwrite(path, original)
 
 
 def run_training(seed, train_path, valid_path, device, args):
@@ -75,7 +73,7 @@ def run_training(seed, train_path, valid_path, device, args):
         loss_fn = VAELoss()
     else:
         model = Autoencoder(h=80, w=160, outputs=args.num_z)
-        loss_fn = nn.BCELoss()
+        loss_fn = nn.MSELoss()
     
     model.to(device)
     
@@ -117,13 +115,13 @@ def parse_args():
     arg_parser.add_argument("--variational", action='store_true')
     arg_parser.add_argument("--result_path", type=str, default=HOME_PATH+'/test_vae/')
     arg_parser.add_argument('--batch_size', default=32, type=int, help='batch size')
-    arg_parser.add_argument('--num_z', default=128, type=int, help='The number of latent variables')
+    arg_parser.add_argument('--num_z', default=256, type=int, help='The number of latent variables')
     arg_parser.add_argument('--n_epoch', default=25, type=int, help='The number of epoch')
     arg_parser.add_argument('--lr', default=1e-5, type=float, help='Learning rate')
-    arg_parser.add_argument('--wd', default=1e-5, type=float, help='Weight decay')
+    arg_parser.add_argument('--wd', default=0.0, type=float, help='Weight decay')
     arg_parser.add_argument('--save_model_interval', default=5, type=int, help='save model interval')
     arg_parser.add_argument('--inf_model_interval', default=1, type=int, help='inference interval')
-    arg_parser.add_argument('--num_inf', default=10, type=int, help='The number of inferenced image sets')
+    arg_parser.add_argument('--num_inf', default=20, type=int, help='The number of inferenced image sets')
     
     args = arg_parser.parse_args()
 
@@ -146,7 +144,7 @@ def main():
     # Set device.
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # Set seed.
-    seed = 42
+    seed = 1000
 
     # image file paths
     img_file_path = glob.glob(HOME_PATH + "/normal/images/*.jpg")

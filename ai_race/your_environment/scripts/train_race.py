@@ -13,7 +13,7 @@ import torchvision.transforms as transforms
 import numpy as np
 import pandas as pd
 
-from autoencoder import VAE, ControlHead
+from autoencoder import VAE, Autoencoder, ControlHead
 from utils import seed_everything
 from train_funcs import train_fn, valid_fn
 from make_datasets import ControlDataSet
@@ -32,8 +32,12 @@ def run_training(seed, train_df, valid_df, device, args):
 
     trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     validloader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
+    
+    if args.variational:
+        model = VAE(h=80, w=160, outputs=args.num_z, train_mode=False)
+    else:
+        model = Autoencoder(h=80, w=160, outputs=args.num_z)
 
-    model = VAE(h=80, w=160, outputs=args.num_z, train_mode=False)
     model.load_state_dict(torch.load(args.pretrained_model))
 
     for name, param in model.named_parameters():
@@ -71,16 +75,17 @@ def run_training(seed, train_df, valid_df, device, args):
 def parse_args():
 
     arg_parser = argparse.ArgumentParser(description="Image Classification")
-
+    
+    arg_parser.add_argument("--variational", action='store_true')
     arg_parser.add_argument("--data_path", type=str, default=HOME_PATH+'/Images_from_rosbag/')
     arg_parser.add_argument("--model_name", type=str, default='control_model')
     arg_parser.add_argument("--model_path", type=str, default=CWD_PATH+'/models/')
-    arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/vae_ckpt_25.pth')
+    arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/vae_mse_ckpt_25.pth')
     arg_parser.add_argument('--batch_size', default=32, type=int, help='batch size')
-    arg_parser.add_argument('--num_z', default=128, type=int, help='The number of latent variables')
+    arg_parser.add_argument('--num_z', default=256, type=int, help='The number of latent variables')
     arg_parser.add_argument('--n_epoch', default=25, type=int, help='The number of epoch')
     arg_parser.add_argument('--lr', default=1e-5, type=float, help='Learning rate')
-    arg_parser.add_argument('--wd', default=1e-5, type=float, help='Weight decay')
+    arg_parser.add_argument('--wd', default=0.0, type=float, help='Weight decay')
     arg_parser.add_argument('--save_model_interval', default=5, type=int, help='save model interval')
     
     args = arg_parser.parse_args()

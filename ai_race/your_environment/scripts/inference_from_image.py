@@ -30,7 +30,7 @@ def init_inference():
     global model
     global device
 
-    model = ControlNet(120, 320, 128, DISCRETIZATION)
+    model = ControlNet(80, 160, 256, DISCRETIZATION, args.variational)
 
     model.eval()
 
@@ -40,7 +40,7 @@ def init_inference():
         if args.trt_conversion:
             model.load_state_dict(torch.load(args.pretrained_model))
             model = model.cuda()
-            x = torch.ones((1, 3, 120, 320)).cuda()
+            x = torch.ones((1, 3, 80, 160)).cuda()
             from torch2trt import torch2trt
             model_trt = torch2trt(model, [x], max_batch_size=100, fp16_mode=True)
             torch.save(model_trt.state_dict(), args.trt_model)
@@ -77,16 +77,17 @@ def set_throttle_steer(data):
         print ("average_time:{0}".format((now - pre)/100) + "[sec]")
     start = time.time()
     image = bridge.imgmsg_to_cv2(data, "bgr8")
+    image = image[120:, :]
+    image = cv2.resize(image, (160, 80))
     image = IMG.fromarray(image)
     image = torchvision.transforms.ToTensor()(image)
-    image = image[:, 120:, :]
     image = torch.unsqueeze(image, 0)
 
     image = image.to(device)
     outputs = model(image)
 
     outputs_np = outputs.to('cpu').detach().numpy().copy()
-
+    print(outputs_np)
     output = np.argmax(outputs_np, axis=1)
     print(output)
 
@@ -115,8 +116,9 @@ def parse_args():
 
     arg_parser.add_argument("--trt_conversion", action='store_true')
     arg_parser.add_argument("--trt_module", action='store_true')
-    arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/control_model_ckpt_25.pth')
+    arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/control_z256_ckpt_25.pth')
     arg_parser.add_argument("--trt_model", type=str, default=CWD_PATH+'/trt_models/dqn_20210113_trt.pth' )
+    arg_parser.add_argument("--variational", action='store_true')
 
     args = arg_parser.parse_args()
 

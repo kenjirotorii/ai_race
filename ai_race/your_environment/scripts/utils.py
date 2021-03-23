@@ -17,14 +17,12 @@ def seed_everything(seed=42):
 
 
 def get_img(path, crop=True):
-    im_bgr = cv2.imread(path)
-    im_rgb = im_bgr[:, :, ::-1]
+    img = cv2.imread(path)
     if crop:
-        h = im_rgb.shape[0]
-        im_rgb = im_rgb[int(h/2):, :, :]
-        im_rgb = cv2.resize(im_rgb, (160, 80))
-        
-    return im_rgb
+        h = img.shape[0]
+        img = img[int(h/2):, :, :]
+        img = cv2.resize(img, (160, 80))
+    return img
 
 
 def calc_score(output_list, target_list, running_loss, data_loader):
