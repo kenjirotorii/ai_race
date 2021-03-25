@@ -89,6 +89,20 @@ class SeasonNet(nn.Module):
         return x
 
 
+def season_recog_net(h, w, num_classes, num_actions, pretrained_model):
+
+    model = SeasonNet(h, w, num_classes, num_actions)
+    
+    model.recog.load_state_dict(torch.load(pretrained_model))
+
+    for name, param in model.named_parameters():
+        layer_name = name.split('.')[0]
+        if layer_name == "recog":
+            param.requires_grad = False
+
+    return model
+
+
 if __name__ == "__main__":
 
     h = 240
@@ -113,24 +127,7 @@ if __name__ == "__main__":
 
     for name, param in season.named_parameters():
         print(name, param.requires_grad)
-
-    # img_u = img[:, :, :120, :]
-    # img_b = img[:, :, 120:, :]
-
-    # recog = RecogNet(120, 320, 4)
-    # control = ControlNet(120, 320, 3)
-
-    # recog.eval()
-
-    # out1 = recog(img_u)
-    # mask = F.one_hot(out1.argmax(1), num_classes=4).to(torch.float)
-
-    # print(out1)
-    # print(mask)
-
-    # control.eval()
-
-    # y = control(img_b, mask)
-
-    # print(y)
     
+    y = season(img)
+
+    print(y) 
