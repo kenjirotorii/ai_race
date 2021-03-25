@@ -38,12 +38,12 @@ def run_training(seed, train_df, valid_df, device, args):
     else:
         model = Autoencoder(h=80, w=160, outputs=args.num_z)
 
-    model.load_state_dict(torch.load(args.pretrained_model))
-
-    for name, param in model.named_parameters():
-        layer_name = name.split('.')[0]
-        if layer_name == "encoder":
-            param.requires_grad = False
+    if not args.non_transfer:
+        model.load_state_dict(torch.load(args.pretrained_model))
+        for name, param in model.named_parameters():
+            layer_name = name.split('.')[0]
+            if layer_name == "encoder":
+                param.requires_grad = False
 
     model.decoder = ControlHead(args.num_z, 3)
     model.to(device)
@@ -77,6 +77,7 @@ def parse_args():
     arg_parser = argparse.ArgumentParser(description="Image Classification")
     
     arg_parser.add_argument("--variational", action='store_true')
+    arg_parser.add_argument("--non_transfer", action='store_true')
     arg_parser.add_argument("--data_path", type=str, default=HOME_PATH+'/Images_from_rosbag/')
     arg_parser.add_argument("--model_name", type=str, default='control_model')
     arg_parser.add_argument("--model_path", type=str, default=CWD_PATH+'/models/')
