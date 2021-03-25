@@ -165,7 +165,7 @@ class VAELoss(nn.Module):
         return loss / bs
 
 
-def freeze_ae(self, img_size, num_latent, num_actions, pretrained_model, variational):
+def freeze_ae(img_size, num_latent, num_actions, pretrained_model, variational):
     
     if variational:
         model = VAE(h=img_size[0], w=img_size[1], outputs=num_latent, train_mode=False)

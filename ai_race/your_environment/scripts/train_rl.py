@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import subprocess
+import argparse
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -26,7 +27,7 @@ from rl.ddqn import Agent
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+HOME_PATH = os.environ['HOME']
 
 class CarBot:
 
@@ -60,7 +61,7 @@ class CarBot:
         self.rewards = []
 
         self.course_out = False
-        self.episode = 0
+        self.episode = args.start_episode
         self.complete = 0
 
         # agent
@@ -105,6 +106,8 @@ class CarBot:
 
         action = self.agent.get_action(state=image, epsilon=eps).to('cpu')
         self.actions.append(action)
+        
+        rospy.sleep(0.01)
 
         angular_z = float(action[0])
         current_pose = np.array([self.odom_x, self.odom_y, self.odom_theta])
@@ -138,10 +141,10 @@ class CarBot:
             rospy.loginfo('Course Out !!')
             return -1.0
         elif dist_from_inline < 0:
-            return -0.5
+            return -1.0
         elif dist_from_inline < 0.3:
             return 1.0
-        elif dist_from_inline < 0.5:
+        elif dist_from_inline < 0.6:
             return 0.0
         elif dist_from_inline < 0.9:
             return -1.0
@@ -178,10 +181,6 @@ class CarBot:
         for epoch in range(n_epoch):
             self.agent.update_q_function()
 
-    def agent_model_save(self):
-        print("agent model save to {}".format(self.save_model_path))
-        self.agent.save_model(model_path=self.save_model_path)
-
     def update_target_q(self):
         self.agent.update_target_q_function()
 
@@ -211,20 +210,25 @@ class CarBot:
 
         while not rospy.is_shutdown():
             
-            if self.course_out or self.step > 2500:
+            if self.course_out or self.step > 2400:
                 
                 self.stop()
 
-                if self.step > 2500:
+                if self.step > 2400:
                     self.complete += 1
+                    complete_path = self.save_model_path.split('.')[0] + '_complete_{}.pth'.format(self.episode)
+                    self.agent.save_model(model_path=complete_path)
+                    
                     if self.complete >= 3:
                         break
-                    self.agent_model_save()
                 else:
                     self.complete = 0
-                
+
+                print("agent model save to {}".format(self.save_model_path))
+                self.agent.save_model(model_path=self.save_model_path)
+
                 if not self.online:
-                    self.agent_training(args.n_epoch)
+                    self.agent_training(self.n_epoch)
 
                 self.episode += 1
                 
@@ -244,17 +248,18 @@ def parse_args():
     arg_parser.add_argument("--online_learning", action='store_true')
     arg_parser.add_argument("--model_path", type=str, default=HOME_PATH+'/catkin_ws/src/ai_race/ai_race/your_environment/models/')
     arg_parser.add_argument("--model_name", type=str, default='ddqn_model')
-    arg_parser.add_argument("--pretrained_model", type=str, default=HOME_PATH+'/catkin_ws/src/ai_race/ai_race/your_environment/models/vae_mse_ckpt_25.pth')
+    arg_parser.add_argument("--pretrained_model", type=str, default=HOME_PATH+'/catkin_ws/src/ai_race/ai_race/your_environment/models/vae_mse_z256_ckpt_25.pth')
     arg_parser.add_argument("--trained_model", type=str, default=None)
-    arg_parser.add_argument('--num_actions', default=3, type=int, help='The number of actions')
+    arg_parser.add_argument('--num_actions', default=2, type=int, help='The number of actions')
     arg_parser.add_argument('--num_z', default=256, type=int, help='The number of latent variables')
     arg_parser.add_argument('--memory_cap', default=1000, type=int, help='Meomry capacity of replay buffer')
     arg_parser.add_argument('--n_epoch', default=25, type=int, help='The number of epoch')
     arg_parser.add_argument('--batch_size', default=32, type=int, help='batch size')
     arg_parser.add_argument('--lr', default=5e-4, type=float, help='Learning rate')
-    arg_parser.add_argument('--gamma', default=0.995, type=float, help='Discount rate')
+    arg_parser.add_argument('--gamma', default=0.99, type=float, help='Discount rate')
     arg_parser.add_argument('--target_update_interval', default=5, type=int, help='target update interval')
-    
+    arg_parser.add_argument('--start_episode', default=0, type=int)
+
     args = arg_parser.parse_args()
 
     # Make directory.
