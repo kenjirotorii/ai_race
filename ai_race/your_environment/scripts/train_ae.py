@@ -13,14 +13,13 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 
-from autoencoder import Autoencoder, VAE, VAELoss
-from utils import get_img, seed_everything
-from train_funcs import train_ae, valid_ae
-from make_datasets import AEDataSet
+from networks.autoencoder import Autoencoder, VAE, VAELoss
+from common.utils import get_img, seed_everything
+from common.train_funcs import train_ae, valid_ae
+from common.make_datasets import AEDataSet
 
 
 HOME_PATH = os.environ['HOME']
-CWD_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def inference_and_save(model, args, file_name=None, device="cpu", variational=True, epoch=0):
@@ -111,7 +110,7 @@ def parse_args():
     arg_parser = argparse.ArgumentParser(description="Autoencoder")
 
     arg_parser.add_argument("--model_name", type=str, default='vae')
-    arg_parser.add_argument("--model_path", type=str, default=CWD_PATH+'/models/')
+    arg_parser.add_argument("--model_path", type=str, default=HOME_PATH+'/catkin_ws/src/ai_race/ai_race/your_environment/models/')
     arg_parser.add_argument("--variational", action='store_true')
     arg_parser.add_argument("--result_path", type=str, default=HOME_PATH+'/test_vae/')
     arg_parser.add_argument('--batch_size', default=32, type=int, help='batch size')
