@@ -68,29 +68,69 @@ class ControlNet(nn.Module):
         return x
 
 
+class SeasonNet(nn.Module):
+    def __init__(self, h, w, num_classes, num_actions):
+        super(SeasonNet, self).__init__()
+
+        self.div = int(h / 2)
+        self.num_classes = num_classes
+        self.recog = RecogNet(self.div, w, num_classes)
+        self.control = ControlNet(self.div, w, num_actions)
+
+    def forward(self, x):
+        x1 = x[:, :, :self.div, :]
+        x2 = x[:, :, self.div:, :]
+
+        x1 = self.recog(x1)
+        mask = F.one_hot(x1.argmax(1), num_classes=self.num_classes).to(torch.float)
+
+        x = self.control(x2, mask)
+
+        return x
+
+
 if __name__ == "__main__":
 
     h = 240
     w = 320
+    num_classes = 4
+    num_actions = 3
 
     img = torch.rand(4, 3, h, w)
-    img_u = img[:, :, :120, :]
-    img_b = img[:, :, 120:, :]
 
-    recog = RecogNet(120, 320, 4)
-    control = ControlNet(120, 320, 3)
+    recog = RecogNet(h / 2, 320, num_classes)
 
-    recog.eval()
+    season = SeasonNet(h, w, num_classes, num_actions)
 
-    out1 = recog(img_u)
-    mask = F.one_hot(out1.argmax(1), num_classes=4).to(torch.float)
+    season.recog.load_state_dict(recog.state_dict())
 
-    print(out1)
-    print(mask)
+    for name, param in season.named_parameters():
+        layer_name = name.split('.')[0]
+        if layer_name == "recog":
+            param.requires_grad = False
 
-    control.eval()
+    print(season)
 
-    y = control(img_b, mask)
+    for name, param in season.named_parameters():
+        print(name, param.requires_grad)
 
-    print(y)
+    # img_u = img[:, :, :120, :]
+    # img_b = img[:, :, 120:, :]
+
+    # recog = RecogNet(120, 320, 4)
+    # control = ControlNet(120, 320, 3)
+
+    # recog.eval()
+
+    # out1 = recog(img_u)
+    # mask = F.one_hot(out1.argmax(1), num_classes=4).to(torch.float)
+
+    # print(out1)
+    # print(mask)
+
+    # control.eval()
+
+    # y = control(img_b, mask)
+
+    # print(y)
     
