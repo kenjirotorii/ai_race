@@ -18,7 +18,7 @@ from cv_bridge import CvBridge
 import torch
 import torchvision
 
-from autoencoder import ControlNet
+from networks.autoencoder import ControlNet
 
 DISCRETIZATION = 3
 CWD_PATH = os.path.dirname(os.path.abspath(__file__))

@@ -165,6 +165,25 @@ class VAELoss(nn.Module):
         return loss / bs
 
 
+def freeze_ae(self, img_size, num_latent, num_actions, pretrained_model, variational):
+    
+    if variational:
+        model = VAE(h=img_size[0], w=img_size[1], outputs=num_latent, train_mode=False)
+    else:
+        model = Autoencoder(h=img_size[0], w=img_size[1], outputs=num_latent)
+        
+    model.load_state_dict(torch.load(pretrained_model))
+
+    for name, param in model.named_parameters():
+        layer_name = name.split('.')[0]
+        if layer_name == "encoder":
+            param.requires_grad = False
+
+    model.decoder = ControlHead(num_latent, num_actions)
+
+    return model
+
+
 if __name__ == "__main__":
 
     h = 80

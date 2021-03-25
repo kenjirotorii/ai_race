@@ -13,14 +13,13 @@ import torchvision.transforms as transforms
 import numpy as np
 import pandas as pd
 
-from autoencoder import VAE, Autoencoder, ControlHead
-from utils import seed_everything
-from train_funcs import train_fn, valid_fn
-from make_datasets import ControlDataSet
+from networks.autoencoder import freeze_ae
+from common.utils import seed_everything
+from common.train_funcs import train_fn, valid_fn
+from common.make_datasets import ControlDataSet
 
 
 HOME_PATH = os.environ['HOME']
-CWD_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def run_training(seed, train_df, valid_df, device, args):
@@ -33,19 +32,7 @@ def run_training(seed, train_df, valid_df, device, args):
     trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     validloader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
     
-    if args.variational:
-        model = VAE(h=80, w=160, outputs=args.num_z, train_mode=False)
-    else:
-        model = Autoencoder(h=80, w=160, outputs=args.num_z)
-
-    if not args.non_transfer:
-        model.load_state_dict(torch.load(args.pretrained_model))
-        for name, param in model.named_parameters():
-            layer_name = name.split('.')[0]
-            if layer_name == "encoder":
-                param.requires_grad = False
-
-    model.decoder = ControlHead(args.num_z, 3)
+    model = freeze_ae((80, 160), args.num_z, 3, args.pretrained_model, args.variational)
     model.to(device)
     
     loss_fn = nn.CrossEntropyLoss()
@@ -77,11 +64,10 @@ def parse_args():
     arg_parser = argparse.ArgumentParser(description="Image Classification")
     
     arg_parser.add_argument("--variational", action='store_true')
-    arg_parser.add_argument("--non_transfer", action='store_true')
     arg_parser.add_argument("--data_path", type=str, default=HOME_PATH+'/Images_from_rosbag/')
     arg_parser.add_argument("--model_name", type=str, default='control_model')
-    arg_parser.add_argument("--model_path", type=str, default=CWD_PATH+'/models/')
-    arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/vae_mse_ckpt_25.pth')
+    arg_parser.add_argument("--model_path", type=str, default=HOME_PATH+'/catkin_ws/src/ai_race/ai_race/your_environment/models/')
+    arg_parser.add_argument("--pretrained_model", type=str, default=HOME_PATH+'/catkin_ws/src/ai_race/ai_race/your_environment/models/vae_mse_ckpt_25.pth')
     arg_parser.add_argument('--batch_size', default=32, type=int, help='batch size')
     arg_parser.add_argument('--num_z', default=256, type=int, help='The number of latent variables')
     arg_parser.add_argument('--n_epoch', default=25, type=int, help='The number of epoch')
