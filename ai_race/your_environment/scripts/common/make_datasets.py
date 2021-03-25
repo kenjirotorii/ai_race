@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
 
-from utils import get_img
+from utils import get_img, get_img_recog
 
 
 class AEDataSet(Dataset):
@@ -55,3 +55,33 @@ class ControlDataSet(Dataset):
             img = self.transform(img.copy())
 
         return img, label
+
+
+class RecogDataSet(DataSet):
+    def __init__(self, path_list, transform=None):
+        """
+        Args:
+            path_list (list): image file paths
+            transform (transforms): transforms
+        """
+        self.path_list = path_list
+        self.transform = transform
+        self.seasons = {
+            "spring": 0,
+            "summer": 1,
+            "autumn": 2,
+            "winter": 3
+        }
+
+    def __len__(self):
+        return len(self.path_list)
+
+    def __getitem__(self, idx):
+        s = self.path_list[idx].split('/')[-3]
+        label = self.seasons[s]
+        inputs = get_img_recog(self.path_list[idx])
+
+        if self.transform:
+            inputs = self.transform(inputs.copy())
+
+        return inputs, targets

@@ -25,6 +25,13 @@ def get_img(path, crop=True):
     return img
 
 
+def get_img_recog(path):
+    img = cv2.imread(path)
+    h = img.shape[0]
+    img = img[int(h/2):, :, :]
+    return img
+
+
 def calc_score(output_list, target_list, running_loss, data_loader):
     # Calculate accuracy.
     acc = round(f1_score(output_list, target_list, average='micro'), 6)
