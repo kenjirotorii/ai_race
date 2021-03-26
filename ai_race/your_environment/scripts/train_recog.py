@@ -29,7 +29,7 @@ def run_training(seed, train_path, valid_path, device, args):
     trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     validloader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
     
-    model = RecogNet(120, 240, 4)
+    model = RecogNet(80, 160, 4)
     loss_fn = nn.CrossEntropyLoss()
     
     model.to(device)

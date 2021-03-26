@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from networks.autoencoder import Autoencoder, Encoder
 
 def conv2d_size_out(size, kernel_size=5, stride=2):
     return (size - (kernel_size - 1) - 1) // stride  + 1
@@ -69,13 +70,16 @@ class ControlNet(nn.Module):
 
 
 class SeasonNet(nn.Module):
-    def __init__(self, h, w, num_classes, num_actions):
+    def __init__(self, h, w, num_z, num_classes, num_actions):
         super(SeasonNet, self).__init__()
 
         self.div = int(h / 2)
         self.num_classes = num_classes
+        self.num_actions = num_actions
+        
         self.recog = RecogNet(self.div, w, num_classes)
-        self.control = ControlNet(self.div, w, num_actions)
+        self.encoder = Encoder(self.div, w, num_z, False)
+        self.head = nn.Linear(num_z, num_actions*num_classes)
 
     def forward(self, x):
         x1 = x[:, :, :self.div, :]
@@ -83,21 +87,32 @@ class SeasonNet(nn.Module):
 
         x1 = self.recog(x1)
         mask = F.one_hot(x1.argmax(1), num_classes=self.num_classes).to(torch.float)
+        mask = mask.view(-1, 1, self.num_classes)
 
-        x = self.control(x2, mask)
+        x2 = self.encoder(x2)
+        x2 = self.head(x2)
+        x2 = x2.view(-1, self.num_classes, self.num_actions)
 
+        x = torch.matmul(mask, x2)
+        x = x.view(-1, self.num_actions)
         return x
 
 
-def season_recog_net(h, w, num_classes, num_actions, pretrained_model):
-
-    model = SeasonNet(h, w, num_classes, num_actions)
+def season_recog_net(img_size, num_z, num_classes, num_actions, ae_model, recog_model):
     
-    model.recog.load_state_dict(torch.load(pretrained_model))
+    h, w = img_size
+    
+    ae = Autoencoder(int(h /2), w, num_z)
+    ae.load_state_dict(torch.load(ae_model))
+    
+    model = SeasonNet(h, w, num_z, num_classes, num_actions)
+    
+    model.recog.load_state_dict(torch.load(recog_model))
+    model.encoder.load_state_dict(ae.encoder.state_dict())
 
     for name, param in model.named_parameters():
         layer_name = name.split('.')[0]
-        if layer_name == "recog":
+        if layer_name in ["recog", "encoder"]:
             param.requires_grad = False
 
     return model
@@ -109,25 +124,29 @@ if __name__ == "__main__":
     w = 320
     num_classes = 4
     num_actions = 3
+    num_z = 256
 
     img = torch.rand(4, 3, h, w)
 
-    recog = RecogNet(h / 2, 320, num_classes)
+    recog = RecogNet(h / 2, w, num_classes)
 
-    season = SeasonNet(h, w, num_classes, num_actions)
+    ae = Autoencoder(h / 2, w, num_z)
 
-    season.recog.load_state_dict(recog.state_dict())
+    model = SeasonNet(h, w, num_z, num_classes, num_actions)
 
-    for name, param in season.named_parameters():
+    model.recog.load_state_dict(recog.state_dict())
+    model.encoder.load_state_dict(ae.encoder.state_dict())
+
+    for name, param in model.named_parameters():
         layer_name = name.split('.')[0]
-        if layer_name == "recog":
+        if layer_name in ["recog", "encoder"]:
             param.requires_grad = False
 
-    print(season)
+    print(model)
 
-    for name, param in season.named_parameters():
+    for name, param in model.named_parameters():
         print(name, param.requires_grad)
     
-    y = season(img)
+    y = model(img)
 
     print(y) 

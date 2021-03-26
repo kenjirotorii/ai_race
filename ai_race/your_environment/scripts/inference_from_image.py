@@ -19,8 +19,9 @@ import torch
 import torchvision
 
 from networks.autoencoder import ControlNet
+from networks.recognet import SeasonNet
 
-DISCRETIZATION = 3
+DISCRETIZATION = 2
 CWD_PATH = os.path.dirname(os.path.abspath(__file__))
 
 model = None
@@ -29,8 +30,9 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 def init_inference():
     global model
     global device
-
-    model = ControlNet(80, 160, 256, DISCRETIZATION, args.variational)
+    
+    # model = ControlNet(80, 160, 256, DISCRETIZATION, args.variational)
+    model = SeasonNet(160, 160, 256, 4, DISCRETIZATION)
 
     model.eval()
 
@@ -77,8 +79,8 @@ def set_throttle_steer(data):
         print ("average_time:{0}".format((now - pre)/100) + "[sec]")
     start = time.time()
     image = bridge.imgmsg_to_cv2(data, "bgr8")
-    image = image[120:, :]
-    image = cv2.resize(image, (160, 80))
+    # image = image[120:, :]
+    image = cv2.resize(image, (160, 160))
     image = IMG.fromarray(image)
     image = torchvision.transforms.ToTensor()(image)
     image = torch.unsqueeze(image, 0)
@@ -90,6 +92,9 @@ def set_throttle_steer(data):
     print(outputs_np)
     output = np.argmax(outputs_np, axis=1)
     print(output)
+    
+    if args.debug:
+        rospy.sleep(0.01)
 
     angular_z = float(output)
 
@@ -119,6 +124,7 @@ def parse_args():
     arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/control_z256_ckpt_25.pth')
     arg_parser.add_argument("--trt_model", type=str, default=CWD_PATH+'/trt_models/dqn_20210113_trt.pth' )
     arg_parser.add_argument("--variational", action='store_true')
+    arg_parser.add_argument("--debug", action='store_true')
 
     args = arg_parser.parse_args()
 

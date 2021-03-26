@@ -1,7 +1,7 @@
 '''
 Train functions.
 '''
-from utils import calc_score
+from common.utils import calc_score
 
 def train_ae(model, optimizer, scheduler, loss_fn, dataloader, device, variational):
 

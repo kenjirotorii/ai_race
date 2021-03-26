@@ -28,7 +28,8 @@ def get_img(path, crop=True):
 def get_img_recog(path):
     img = cv2.imread(path)
     h = img.shape[0]
-    img = img[int(h/2):, :, :]
+    img = img[:int(h/2), :, :]
+    img = cv2.resize(img, (160, 80))
     return img
 
 

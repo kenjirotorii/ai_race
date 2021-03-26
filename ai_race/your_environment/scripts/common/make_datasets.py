@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
 
-from utils import get_img, get_img_recog
+from common.utils import get_img, get_img_recog
 
 
 class AEDataSet(Dataset):
@@ -57,7 +57,7 @@ class ControlDataSet(Dataset):
         return img, label
 
 
-class RecogDataSet(DataSet):
+class RecogDataSet(Dataset):
     def __init__(self, path_list, transform=None):
         """
         Args:
@@ -84,4 +84,4 @@ class RecogDataSet(DataSet):
         if self.transform:
             inputs = self.transform(inputs.copy())
 
-        return inputs, targets
+        return inputs, label
