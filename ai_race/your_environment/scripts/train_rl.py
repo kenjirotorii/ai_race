@@ -108,7 +108,7 @@ class CarBot:
         self.actions.append(action)
         
         rospy.sleep(0.01)
-
+        
         angular_z = float(action[0])
         current_pose = np.array([self.odom_x, self.odom_y, self.odom_theta])
         next_pose = state_transition(pose=current_pose, omega=angular_z, vel=1.6, dt=0.1)
@@ -134,24 +134,18 @@ class CarBot:
 
     def get_reward(self, pose):
 
-        dist_from_inline = distance_from_inline(pose)
-        
-        if dist_from_inline < -0.10:
-            self.course_out = True
-            rospy.loginfo('Course Out !!')
-            return -1.0
-        elif dist_from_inline < 0:
-            return -1.0
-        elif dist_from_inline < 0.3:
+        dist_from_center = distance_from_centerline(pose)
+
+        if dist_from_center < 0.3:
             return 1.0
-        elif dist_from_inline < 0.6:
+        elif dist_from_center < 0.45:
             return 0.0
-        elif dist_from_inline < 0.9:
+        elif dist_from_center < 0.6:
             return -1.0
         else:
             self.course_out = True
             rospy.loginfo('Course Out !!')
-            return -1.0
+            return -10.0
 
     def stop(self):
         rospy.loginfo('***** EPISODE #%d *****' % (self.episode))
