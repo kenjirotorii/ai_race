@@ -54,7 +54,7 @@ def run_training(seed, train_df, valid_df, device, args):
             best_loss = valid_loss
             torch.save(model.state_dict(), best_model_path)
         
-        if epoch % args.save_model_interval == 4:
+        if (epoch + 1) % args.save_model_interval == 0:
             model_path = "{}_ckpt_{}.pth".format(args.model_path + args.model_name, epoch + 1)
             torch.save(model.state_dict(), model_path)
 

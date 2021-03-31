@@ -20,7 +20,6 @@ import torchvision
 
 from networks.autoencoder import ControlNet
 
-DISCRETIZATION = 2
 CWD_PATH = os.path.dirname(os.path.abspath(__file__))
 
 model = None
@@ -30,7 +29,10 @@ def init_inference():
     global model
     global device
     
-    model = ControlNet(80, 160, 256, DISCRETIZATION, args.variational)
+    if args.controller:
+        model = ControlNet(80, 160, 256, 3, args.variational)
+    else:
+        model = ControlNet(80, 160, 256, 2, args.variational)
 
     model.eval()
 
@@ -92,9 +94,12 @@ def set_throttle_steer(data):
     print(output)
     
     if args.debug:
-        rospy.sleep(0.01)
-
-    angular_z = float(output)
+        rospy.sleep(args.adjust_dur)
+    
+    if args.controller:
+        angular_z = float(output - 1)
+    else:
+        angular_z = float(output)
 
     twist.linear.x = 1.6
     twist.linear.y = 0.0
@@ -119,10 +124,12 @@ def parse_args():
 
     arg_parser.add_argument("--trt_conversion", action='store_true')
     arg_parser.add_argument("--trt_module", action='store_true')
-    arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/control_z256_ckpt_25.pth')
+    arg_parser.add_argument("--pretrained_model", type=str, default=CWD_PATH+'/models/control_ae_z256_ckpt_25.pth')
     arg_parser.add_argument("--trt_model", type=str, default=CWD_PATH+'/trt_models/dqn_20210113_trt.pth' )
     arg_parser.add_argument("--variational", action='store_true')
     arg_parser.add_argument("--debug", action='store_true')
+    arg_parser.add_argument("--controller", action='store_true')
+    arg_parser.add_argument('--adjust_dur', default=0.01, type=float)
 
     args = arg_parser.parse_args()
 
